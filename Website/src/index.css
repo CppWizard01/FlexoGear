@@ -1,0 +1,287 @@
+/* --- GLOBAL STYLES & VARIABLES --- */
+:root {
+  --background-dark: #0F172A; /* slate-900 */
+  --card-background: #1E293B;   /* slate-800 */
+  --text-primary: #E2E8F0;     /* slate-200 */
+  --text-secondary: #94A3B8; /* slate-400 */
+  --accent-cyan: #22D3EE;
+  --accent-blue: #3B82F6;
+  --accent-green: #22C55E;
+  --accent-red: #EF4444;
+  --border-color: #334155;    /* slate-700 */
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background-dark);
+  color: var(--text-primary);
+}
+
+/* --- MAIN LAYOUT --- */
+.patient-dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  background-color: var(--card-background);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dashboard-main {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Two equal columns */
+  gap: 2rem;
+  padding: 2rem;
+}
+
+/* --- COMPONENT STYLES --- */
+.live-session, .progress-tracking {
+  background-color: var(--card-background);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* --- BUTTONS --- */
+button {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+  transform: scale(1.03);
+}
+
+.logout-button {
+  background-color: var(--accent-red);
+  color: white;
+}
+
+#connectDeviceBtn {
+  background-color: var(--accent-blue);
+  color: white;
+  width: 100%;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.exercise-btn {
+  background-color: #334155; /* slate-700 */
+  color: var(--text-primary);
+  text-align: left;
+  width: 100%;
+}
+
+.exercise-btn:hover {
+  background-color: #475569; /* slate-600 */
+}
+
+.exercise-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.exercise-controls div {
+  display: flex;
+  gap: 1rem;
+}
+
+#startExerciseBtn, #stopExerciseBtn {
+  flex: 1;
+  color: white;
+}
+
+#startExerciseBtn {
+  background-color: var(--accent-green);
+}
+
+#stopExerciseBtn {
+  background-color: var(--accent-red);
+}
+
+/* --- DATA DISPLAYS --- */
+#deviceStatus {
+  background-color: #334155;
+  color: #FBBF24; /* Amber-400 */
+  text-align: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.live-data-display {
+  background-color: var(--background-dark);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.live-data-display p:first-child {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+#liveAngle {
+  color: var(--accent-cyan);
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chart-container, .session-summary {
+  background-color: var(--background-dark);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+
+/* --- RESPONSIVE DESIGN FOR MOBILE --- */
+@media (max-width: 768px) {
+  .dashboard-main {
+    grid-template-columns: 1fr; /* Stack columns on top of each other */
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.25rem;
+  }
+}
+
+/* ----------------------- */
+
+/* --- ADD THESE STYLES FOR HEADER WATERMARK --- */
+
+.header-content {
+  position: relative; /* This is the anchor for the watermark */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.header-watermark {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  font-size: 4rem; /* Make it large */
+  font-weight: 800; /* Make it bold */
+  color: rgba(255, 255, 255, 0.03); /* Make it very transparent */
+  z-index: 0; /* Place it behind the text */
+  pointer-events: none; /* Make it unclickable */
+  white-space: nowrap;
+}
+
+/* Ensure the welcome text stays on top of the watermark */
+.header-content h1 {
+  position: relative;
+  z-index: 1;
+}
+
+/* ----------------------- */
+
+/* --- ADD THESE STYLES FOR SESSION LIST --- */
+
+.session-summary {
+  margin-top: 2rem;
+}
+
+.session-list {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.session-list li {
+  background-color: var(--background-dark);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 4px solid var(--accent-blue);
+}
+
+.session-date {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.session-exercise {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.session-reps {
+  font-size: 0.9rem;
+  background-color: var(--border-color);
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+}
+
+/* ----------------------- */
+
+/* --- ADD THESE STYLES FOR LIVE SESSION --- */
+
+#connectDeviceBtn.connected {
+  background-color: var(--accent-cyan);
+  color: var(--background-dark);
+  cursor: default;
+}
+
+.exercise-selection {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.exercise-btn.selected {
+  background-color: var(--accent-blue);
+  color: white;
+  border: 1px solid var(--accent-blue);
+  transform: scale(1.05);
+}
+
+#startExerciseBtn:disabled,
+#stopExerciseBtn:disabled {
+  background-color: var(--border-color);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ----------------------- */

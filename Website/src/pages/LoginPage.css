@@ -1,0 +1,108 @@
+/* src/pages/LoginPage.css */
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.login-container {
+  background-color: var(--card-background);
+  padding: 2.5rem 3rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  border: 1px solid var(--border-color);
+}
+
+.login-title {
+  color: var(--accent-cyan);
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+  font-size: 1rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.login-form input {
+  background-color: var(--background-dark);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.login-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Base button styles might be in index.css, these are overrides/specifics */
+.login-options button,
+.login-form button { /* Added .login-form button here */
+  background-color: var(--accent-blue);
+  color: white;
+  font-size: 1rem;
+  border: none; /* Ensure buttons have no default border */
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.login-options button:hover,
+.login-form button:hover { /* Added .login-form button here */
+  background-color: #60A5FA; /* A lighter blue */
+  transform: scale(1.03);
+}
+
+.login-form button:disabled { /* Style for disabled login button */
+    background-color: var(--border-color);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Make sure error message style exists if used in LoginPage.jsx */
+.error-message {
+  color: var(--accent-red);
+  font-size: 0.9rem;
+  margin-top: -0.5rem; /* Adjust spacing */
+  margin-bottom: 1rem;
+}
+
+/* Mascot styles if LoginMascot is used */
+.login-mascot {
+  margin-bottom: 1.5rem;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
