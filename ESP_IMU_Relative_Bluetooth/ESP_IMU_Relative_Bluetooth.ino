@@ -1,5 +1,9 @@
 #include <Wire.h>
 #include <Adafruit_BNO08x.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
 
 // ========================================
 // Configuration
@@ -8,7 +12,8 @@
 #define BNO08X_I2CADDR 0x4B
 #define IMU1_RESET_PIN 25
 #define IMU2_RESET_PIN 26
-#define SAMPLE_RATE_MS 50  // 20Hz (adjust as needed: 20ms=50Hz, 10ms=100Hz)
+#define SAMPLE_RATE_MS 20  // Read sensors at 50Hz
+#define SEND_INTERVAL_MS 100 // Send BLE data at 10Hz
 
 // ========================================
 // Global Objects
@@ -16,6 +21,16 @@
 Adafruit_BNO08x bno08x;
 bool imu1_ready = false;
 bool imu2_ready = false;
+
+// --- BLUETOOTH SETUP ---
+BLEServer* pServer = NULL;
+BLECharacteristic* pCharacteristic = NULL;
+bool deviceConnected = false;
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
+// --- NON-BLOCKING TIMER SETUP ---
+unsigned long lastSendTime = 0;
 
 // Data structures for storing latest readings
 struct IMU_Data {
@@ -28,8 +43,9 @@ struct IMU_Data {
   bool valid;
 };
 
-IMU_Data imu1_data = {0};
-IMU_Data imu2_data = {0};
+IMU_Data imu1_data = {0}; // Hand
+IMU_Data imu2_data = {0}; // Arm
+IMU_Data relative_imu_data = {0}; // Hand relative to Arm
 
 // ========================================
 // Helper Functions
@@ -39,7 +55,7 @@ void tcaselect(uint8_t channel) {
   Wire.beginTransmission(MUX_ADDRESS);
   Wire.write(1 << channel);
   Wire.endTransmission();
-  delay(20);
+  delay(10);
 }
 
 void tcaDisableAll() {
@@ -69,7 +85,6 @@ bool checkIMU(uint8_t channel) {
   return (Wire.endTransmission() == 0);
 }
 
-// Read IMU data with retries
 bool readIMU(uint8_t channel, IMU_Data &data) {
   tcaselect(channel);
   delay(15);
@@ -97,56 +112,50 @@ bool readIMU(uint8_t channel, IMU_Data &data) {
   return false;
 }
 
-// Convert quaternion to Euler angles (roll, pitch, yaw in degrees)
+// Calculate relative orientation: q_r = q_arm_conjugate * q_hand
+void calculateRelativeQuaternion(IMU_Data &q_hand, IMU_Data &q_arm, IMU_Data &q_relative) {
+  // q_hand is data1 (IMU1)
+  // q_arm is data2 (IMU2)
+
+  // Conjugate of q_arm
+  float w_arm_conj = q_arm.quat_real;
+  float i_arm_conj = -q_arm.quat_i;
+  float j_arm_conj = -q_arm.quat_j;
+  float k_arm_conj = -q_arm.quat_k;
+
+  float w_hand = q_hand.quat_real;
+  float i_hand = q_hand.quat_i;
+  float j_hand = q_hand.quat_j;
+  float k_hand = q_hand.quat_k;
+
+  // Quaternion multiplication: q_r = (w_arm_conj, i_arm_conj, j_arm_conj, k_arm_conj) * (w_hand, i_hand, j_hand, k_hand)
+  q_relative.quat_real = w_arm_conj * w_hand - i_arm_conj * i_hand - j_arm_conj * j_hand - k_arm_conj * k_hand;
+  q_relative.quat_i    = w_arm_conj * i_hand + i_arm_conj * w_hand + j_arm_conj * k_hand - k_arm_conj * j_hand;
+  q_relative.quat_j    = w_arm_conj * j_hand - i_arm_conj * k_hand + j_arm_conj * w_hand + k_arm_conj * i_hand;
+  q_relative.quat_k    = w_arm_conj * k_hand + i_arm_conj * j_hand - j_arm_conj * i_hand + k_arm_conj * w_hand;
+  
+  q_relative.valid = true;
+}
+
 void quaternionToEuler(IMU_Data &data, float &roll, float &pitch, float &yaw) {
   float qr = data.quat_real;
   float qi = data.quat_i;
   float qj = data.quat_j;
   float qk = data.quat_k;
   
-  // Roll (x-axis rotation)
   float sinr_cosp = 2 * (qr * qi + qj * qk);
   float cosr_cosp = 1 - 2 * (qi * qi + qj * qj);
   roll = atan2(sinr_cosp, cosr_cosp) * 180.0 / PI;
   
-  // Pitch (y-axis rotation)
   float sinp = 2 * (qr * qj - qk * qi);
   if (abs(sinp) >= 1)
-    pitch = copysign(90.0, sinp); // Use 90 degrees if out of range
+    pitch = copysign(90.0, sinp);
   else
     pitch = asin(sinp) * 180.0 / PI;
   
-  // Yaw (z-axis rotation)
   float siny_cosp = 2 * (qr * qk + qi * qj);
   float cosy_cosp = 1 - 2 * (qj * qj + qk * qk);
   yaw = atan2(siny_cosp, cosy_cosp) * 180.0 / PI;
-}
-
-// Print data in different formats
-void printQuaternions() {
-  if (imu1_data.valid) {
-    Serial.print("IMU1["); Serial.print(imu1_data.calibration); Serial.print("] Q(");
-    Serial.print(imu1_data.quat_real, 4); Serial.print(", ");
-    Serial.print(imu1_data.quat_i, 4); Serial.print(", ");
-    Serial.print(imu1_data.quat_j, 4); Serial.print(", ");
-    Serial.print(imu1_data.quat_k, 4); Serial.print(")");
-  } else {
-    Serial.print("IMU1[X] No data");
-  }
-  
-  Serial.print(" | ");
-  
-  if (imu2_data.valid) {
-    Serial.print("IMU2["); Serial.print(imu2_data.calibration); Serial.print("] Q(");
-    Serial.print(imu2_data.quat_real, 4); Serial.print(", ");
-    Serial.print(imu2_data.quat_i, 4); Serial.print(", ");
-    Serial.print(imu2_data.quat_j, 4); Serial.print(", ");
-    Serial.print(imu2_data.quat_k, 4); Serial.print(")");
-  } else {
-    Serial.print("IMU2[X] No data");
-  }
-  
-  Serial.println();
 }
 
 void printEulerAngles() {
@@ -178,6 +187,18 @@ void printEulerAngles() {
   Serial.println();
 }
 
+class MyServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      deviceConnected = true;
+      Serial.println("Device Connected");
+    };
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+      Serial.println("Device Disconnected");
+      BLEDevice::startAdvertising();
+    }
+};
+
 // ========================================
 // Setup
 // ========================================
@@ -187,14 +208,13 @@ void setup() {
   delay(2000);
   
   Serial.println("\n╔════════════════════════════════════════╗");
-  Serial.println("║   Dual BNO08x IMU - Production Code   ║");
+  Serial.println("║   Dual BNO08x - Relative BLE Sender   ║");
   Serial.println("╚════════════════════════════════════════╝\n");
 
   Wire.begin();
   Wire.setClock(100000);
   Serial.println("✓ I2C initialized @ 100kHz");
   
-  // Check MUX
   Wire.beginTransmission(MUX_ADDRESS);
   if (Wire.endTransmission() != 0) {
     Serial.println("✗ MUX not found - HALTING");
@@ -202,18 +222,16 @@ void setup() {
   }
   Serial.println("✓ I2C Multiplexer found");
   
-  // Reset both IMUs
   Serial.println("⟳ Resetting both IMUs...");
   resetBothIMUs();
   tcaDisableAll();
   delay(200);
   
-  // Verify presence
-  Serial.print("  Checking IMU_1... ");
+  Serial.print("  Checking IMU_1 (Hand)... ");
   imu1_ready = checkIMU(0);
   Serial.println(imu1_ready ? "FOUND" : "NOT FOUND");
   
-  Serial.print("  Checking IMU_2... ");
+  Serial.print("  Checking IMU_2 (Arm)... ");
   imu2_ready = checkIMU(1);
   Serial.println(imu2_ready ? "FOUND" : "NOT FOUND");
   
@@ -222,7 +240,6 @@ void setup() {
     while(1) delay(1000);
   }
   
-  // Initialize library on channel 0
   Serial.println("\n⚙ Initializing BNO08x library...");
   tcaselect(0);
   delay(200);
@@ -234,7 +251,6 @@ void setup() {
   } else {
     Serial.println("✓ Library initialized");
     
-    // Enable reports for IMU_1
     if (imu1_ready) {
       if (bno08x.enableReport(SH2_ARVR_STABILIZED_RV, SAMPLE_RATE_MS * 1000)) {
         Serial.println("✓ IMU_1 reports enabled");
@@ -246,7 +262,6 @@ void setup() {
     
     delay(200);
     
-    // Enable reports for IMU_2
     if (imu2_ready) {
       tcaselect(1);
       delay(200);
@@ -260,21 +275,36 @@ void setup() {
   }
   
   Serial.println("\n╔════════════════════════════════════════╗");
-  Serial.print("║ IMU_1: ");
+  Serial.print("║ IMU_1 (Hand): ");
   Serial.print(imu1_ready ? "✓ READY " : "✗ FAILED");
-  Serial.print("  IMU_2: ");
+  Serial.print("  IMU_2 (Arm): ");
   Serial.print(imu2_ready ? "✓ READY " : "✗ FAILED");
   Serial.println(" ║");
   Serial.println("╚════════════════════════════════════════╝\n");
   
-  Serial.println("Starting data stream...");
-  Serial.println("Commands: 'q' = quaternions, 'e' = euler angles\n");
+  Serial.println("--- FlexoGear BLE Server ---");
+  BLEDevice::init("FlexoGear");
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+  
+  pCharacteristic = pService->createCharacteristic(
+                       CHARACTERISTIC_UUID,
+                       BLECharacteristic::PROPERTY_READ |
+                       BLECharacteristic::PROPERTY_NOTIFY
+                     );
+  
+  pCharacteristic->addDescriptor(new BLE2902());
+  pService->start();
+  
+  BLEDevice::startAdvertising();
+  Serial.println("Waiting for a client connection...");
 }
 
 // ========================================
 // Main Loop
 // ========================================
-char displayMode = 'q'; // 'q' for quaternions, 'e' for euler
+char displayMode = 'e'; // 'e' for euler
 
 void loop() {
   static unsigned long lastRead = 0;
@@ -283,29 +313,53 @@ void loop() {
   // Check for serial commands
   if (Serial.available()) {
     char cmd = Serial.read();
-    if (cmd == 'q' || cmd == 'Q') {
-      displayMode = 'q';
-      Serial.println("\n>>> Displaying Quaternions <<<\n");
-    } else if (cmd == 'e' || cmd == 'E') {
+    if (cmd == 'e' || cmd == 'E') {
       displayMode = 'e';
       Serial.println("\n>>> Displaying Euler Angles <<<\n");
     }
   }
   
-  // Rate limiting
-  if (now - lastRead < SAMPLE_RATE_MS) {
-    return;
+  // --- Task 1: Read IMUs (at 50Hz) ---
+  if (now - lastRead >= SAMPLE_RATE_MS) {
+    lastRead = now;
+    
+    if (imu1_ready) readIMU(0, imu1_data);
+    if (imu2_ready) readIMU(1, imu2_data);
+    
+    if (displayMode == 'e') {
+      printEulerAngles();
+    }
   }
-  lastRead = now;
-  
-  // Read both IMUs
-  if (imu1_ready) readIMU(0, imu1_data);
-  if (imu2_ready) readIMU(1, imu2_data);
-  
-  // Display data
-  if (displayMode == 'q') {
-    printQuaternions();
-  } else {
-    printEulerAngles();
+
+  // --- Task 2: Calculate & Send BLE Data (at 10Hz) ---
+  if (deviceConnected && (now - lastSendTime >= SEND_INTERVAL_MS)) {
+    lastSendTime = now;
+
+    if (imu1_data.valid && imu2_data.valid) {
+      
+      // 1. Calculate relative quaternion
+      calculateRelativeQuaternion(imu1_data, imu2_data, relative_imu_data);
+
+      // 2. Format relative quaternion as a string (i, j, k, real)
+      char quatString[60];
+      sprintf(quatString, "%.4f,%.4f,%.4f,%.4f", 
+        relative_imu_data.quat_i,
+        relative_imu_data.quat_j,
+        relative_imu_data.quat_k,
+        relative_imu_data.quat_real
+      );
+      
+      // 3. Send over BLE
+      pCharacteristic->setValue(quatString);
+      pCharacteristic->notify();
+      
+      // 4. Also print relative Euler angles to Serial for debugging
+      float roll, pitch, yaw;
+      quaternionToEuler(relative_imu_data, roll, pitch, yaw);
+      Serial.print("BLE Sent: ");
+      Serial.print(" R:"); Serial.print(roll, 1);
+      Serial.print(" P:"); Serial.print(pitch, 1);
+      Serial.print(" Y:"); Serial.println(yaw, 1);
+    }
   }
 }
