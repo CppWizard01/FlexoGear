@@ -1,8 +1,8 @@
 /* --- GLOBAL STYLES & VARIABLES --- */
 :root {
-  --background-dark: #4d83ffff; /* slate-900 */
+  --background-dark: rgb(0, 0, 0); /* slate-900 */
   --card-background: #1E293B;   /* slate-800 */
-  --text-primary: #f4662a;     /* slate-200 */
+  --text-primary: #f8f6f5;     /* slate-200 */
   --text-secondary: #94A3B8; /* slate-400 */
   --accent-cyan: #22D3EE;
   --accent-blue: #3B82F6;
