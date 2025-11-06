@@ -10,8 +10,8 @@
 // ========================================
 #define MUX_ADDRESS 0x70
 #define BNO08X_I2CADDR 0x4B
-#define IMU1_RESET_PIN 25
-#define IMU2_RESET_PIN 26
+#define IMU1_RESET_PIN 19
+#define IMU2_RESET_PIN 18
 #define SAMPLE_RATE_MS 20  // Read sensors at 50Hz
 #define SEND_INTERVAL_MS 100 // Send BLE data at 10Hz
 
@@ -228,11 +228,11 @@ void setup() {
   delay(200);
   
   Serial.print("  Checking IMU_1 (Hand)... ");
-  imu1_ready = checkIMU(0);
+  imu1_ready = checkIMU(7);
   Serial.println(imu1_ready ? "FOUND" : "NOT FOUND");
   
   Serial.print("  Checking IMU_2 (Arm)... ");
-  imu2_ready = checkIMU(1);
+  imu2_ready = checkIMU(2);
   Serial.println(imu2_ready ? "FOUND" : "NOT FOUND");
   
   if (!imu1_ready && !imu2_ready) {
@@ -241,7 +241,7 @@ void setup() {
   }
   
   Serial.println("\n⚙ Initializing BNO08x library...");
-  tcaselect(0);
+  tcaselect(7);
   delay(200);
   
   if (!bno08x.begin_I2C(BNO08X_I2CADDR, &Wire)) {
@@ -263,7 +263,7 @@ void setup() {
     delay(200);
     
     if (imu2_ready) {
-      tcaselect(1);
+      tcaselect(2);
       delay(200);
       if (bno08x.enableReport(SH2_ARVR_STABILIZED_RV, SAMPLE_RATE_MS * 1000)) {
         Serial.println("✓ IMU_2 reports enabled");
@@ -323,11 +323,11 @@ void loop() {
   if (now - lastRead >= SAMPLE_RATE_MS) {
     lastRead = now;
     
-    if (imu1_ready) readIMU(0, imu1_data);
-    if (imu2_ready) readIMU(1, imu2_data);
+    if (imu1_ready) readIMU(7, imu1_data);
+    if (imu2_ready) readIMU(2, imu2_data);
     
     if (displayMode == 'e') {
-      printEulerAngles();
+      //printEulerAngles();
     }
   }
 
