@@ -25,7 +25,7 @@ const quaternionToEuler = (i, j, k, real) => {
   const siny_cosp = 2.0 * (i * j + k * real);
   const cosy_cosp = 1.0 - 2.0 * (j * j + k * k);
   const yaw = Math.atan2(siny_cosp, cosy_cosp);
-  return { pitch: pitch * (180 / Math.PI), yaw: yaw * (180 / Math.PI) };
+  return { pitch: -1*pitch * (180 / Math.PI), yaw: yaw * (180 / Math.PI) };
 };
 
 function LiveSession() {
