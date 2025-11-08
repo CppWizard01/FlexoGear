@@ -10,9 +10,10 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase"; // Correct path
 
-// BLE Constants (Public Identifiers)
+// BLE Constants (Matching your ESP32 definitions)
 const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"; // TX (ESP32 to App - NOTIFY)
+const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9"; // RX (App to ESP32 - WRITE)
 
 // Helper: Convert Quaternion to Euler Angles (Pitch/Yaw)
 const quaternionToEuler = (i, j, k, real) => {
@@ -59,6 +60,13 @@ function LiveSession() {
   useEffect(() => {
     isCalibratingRef.current = isCalibrating;
   }, [isCalibrating]);
+  // Ref to store the "write" characteristic
+  const commandCharacteristicRef = useRef(null);
+
+  // State to hold the values of the three text boxes
+  const [anglePreset1, setAnglePreset1] = useState("0");
+  const [anglePreset2, setAnglePreset2] = useState("0");
+  const [anglePreset3, setAnglePreset3] = useState("0");
 
   // --- Fetch Prescriptions (Real-Time) ---
   useEffect(() => {
@@ -102,9 +110,18 @@ function LiveSession() {
       setConnectionStatus("Pairing...");
       const server = await device.gatt.connect();
       const service = await server.getPrimaryService(SERVICE_UUID);
+
+      // 1. Get the NOTIFY characteristic (for receiving angle data)
       const characteristic = await service.getCharacteristic(
         CHARACTERISTIC_UUID
       );
+
+      // 2. Get the WRITE characteristic (for sending angle commands)
+      const commandCharacteristic = await service.getCharacteristic(
+        COMMAND_CHARACTERISTIC_UUID
+      );
+      commandCharacteristicRef.current = commandCharacteristic; // Store it in the ref
+
       setConnectionStatus("Connected");
       await characteristic.startNotifications();
       characteristic.addEventListener("characteristicvaluechanged", (event) => {
@@ -132,7 +149,8 @@ function LiveSession() {
     } catch (error) {
       console.error("Bluetooth connection failed:", error); // Keep error log
       setConnectionStatus("Disconnected");
-      alert("Failed to connect.");
+      commandCharacteristicRef.current = null; // Clear ref on failure
+      alert("Failed to connect. Make sure the device is on and in range.");
     }
   };
 
@@ -198,7 +216,7 @@ function LiveSession() {
       if (newRepCount >= selectedPrescription.targetReps) {
         const newSetCount = currentSet + 1;
         if (newSetCount > selectedPrescription.targetSets) {
-          handleStopSession(); // Auto-stop and save
+          handleStopSession(true); // Auto-stop and save
         } else {
           setCurrentSet(newSetCount);
           setRepsInSet(0);
@@ -240,13 +258,12 @@ function LiveSession() {
     }
   };
 
-  const handleStopSession = async () => {
-    const wasActive = isSessionActive; // Check if session was running before stopping
-    const wasAutoCompleted = currentStepText === "Exercise Complete!";
-    if (!wasActive && !wasAutoCompleted) return;
+  const handleStopSession = async (autoCompleted = false) => {
+    const wasActive = isSessionActive;
+    if (!wasActive && !autoCompleted) return; // Don't run if already stopped manually
 
     setIsSessionActive(false); // Stop session state first
-    const finalStepText = wasAutoCompleted
+    const finalStepText = autoCompleted
       ? "Exercise Complete!"
       : "Session Stopped";
     setCurrentStepText(finalStepText);
@@ -271,9 +288,9 @@ function LiveSession() {
             maxUln: Math.round(maxValues.uln),
             timestamp: serverTimestamp(),
           });
-          if (wasActive && !wasAutoCompleted)
+          if (wasActive && !autoCompleted)
             alert("Session stopped and saved!"); // Only alert on manual stop
-          else if (wasAutoCompleted) alert("Exercise complete and saved!");
+          else if (autoCompleted) alert("Exercise complete and saved!");
         } catch (error) {
           console.error("Error saving session: ", error);
           alert("Failed to save session.");
@@ -286,8 +303,41 @@ function LiveSession() {
     setCurrentSet(1);
     setExerciseProgress(0);
     setCurrentStepIndex(0);
-    // Keep finalStepText briefly? Or reset immediately? Resetting:
-    // setCurrentStepText("Ready to Start"); // Re-enable if immediate reset desired
+  };
+
+  // --- Handler for sending all three angle presets at once ---
+  const handleSendAllAngles = async () => {
+    if (!commandCharacteristicRef.current) {
+      alert(
+        "Device is not connected or command characteristic could not be found."
+      );
+      return;
+    }
+
+    try {
+      const encoder = new TextEncoder();
+
+      // 1. Create the object
+      const commandObject = {
+        a1: anglePreset1, // Value from the first text box
+        a2: anglePreset2, // Value from the second text box
+        a3: anglePreset3, // Value from the third text box
+      };
+
+      // 2. Convert the object to a JSON string
+      // This will look like: {"a1":"45","a2":"0","a3":"-20"}
+      const commandString = JSON.stringify(commandObject);
+
+      // 3. Encode and send
+      const data = encoder.encode(commandString);
+      await commandCharacteristicRef.current.writeValue(data);
+
+      console.log(`Sent command: ${commandString}`);
+      alert(`Sent all angles: ${commandString}`);
+    } catch (error) {
+      console.error("Failed to send all angles command:", error);
+      alert("Failed to send command.");
+    }
   };
 
   // Gauge calculations (use adjusted angles relative to calibration)
@@ -382,6 +432,54 @@ function LiveSession() {
         </div>
       </div>
 
+      {/* --- Angle Set Controls (3 Inputs, 1 Button) --- */}
+      <div className="angle-set-controls">
+        <h3>Set Target Angles</h3>
+        <p>Enter target angles (in degrees) and send all at once.</p>
+
+        <div className="angle-preset-group">
+          <label htmlFor="angle1">Angle 1:</label>
+          <input
+            type="number"
+            id="angle1"
+            className="angle-input"
+            value={anglePreset1}
+            onChange={(e) => setAnglePreset1(e.target.value)}
+          />
+        </div>
+
+        <div className="angle-preset-group">
+          <label htmlFor="angle2">Angle 2:</label>
+          <input
+            type="number"
+            id="angle2"
+            className="angle-input"
+            value={anglePreset2}
+            onChange={(e) => setAnglePreset2(e.target.value)}
+          />
+        </div>
+
+        <div className="angle-preset-group">
+          <label htmlFor="angle3">Angle 3:</label>
+          <input
+            type="number"
+            id="angle3"
+            className="angle-input"
+            value={anglePreset3}
+            onChange={(e) => setAnglePreset3(e.target.value)}
+          />
+        </div>
+
+        {/* Single button to send all three */}
+        <button
+          className="send-all-angles-btn" // Added a class for styling
+          onClick={handleSendAllAngles}
+          disabled={connectionStatus !== "Connected"}
+        >
+          Send All Angles
+        </button>
+      </div>
+
       <div className="exercise-controls">
         <h3>Select Prescription:</h3>
         <select
@@ -394,7 +492,7 @@ function LiveSession() {
             );
             setSelectedPrescription(prescription);
             if (isSessionActive) setIsSessionActive(false); // Stop active session if changing
-            setCurrentStepText("Ready to Start");
+            setCurrentStepText("Ready to Start"); // Reset text
             setRepsInSet(0);
             setCurrentSet(1);
             setExerciseProgress(0);
@@ -422,7 +520,7 @@ function LiveSession() {
           </button>
           <button
             id="stopExerciseBtn"
-            onClick={handleStopSession}
+            onClick={() => handleStopSession(false)} // false = manual stop
             disabled={
               !isSessionActive && currentStepText !== "Exercise Complete!"
             }
