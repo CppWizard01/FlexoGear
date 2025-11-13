@@ -15,6 +15,14 @@ const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"; // TX (ESP32 to App - NOTIFY)
 const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9"; // RX (App to ESP32 - WRITE)
 
+// Helper: Normalize angle to -180 to 180 range
+const normalizeAngle = (angle) => {
+  let normalized = angle % 360;
+  if (normalized > 180) normalized -= 360;
+  if (normalized < -180) normalized += 360;
+  return normalized;
+};
+
 // Helper: Convert Quaternion to Euler Angles (Pitch/Yaw)
 const quaternionToEuler = (i, j, k, real) => {
   const sinr_cosp = 2.0 * (i * real + k * j);
@@ -158,10 +166,10 @@ function LiveSession() {
   useEffect(() => {
     if (!isSessionActive || !selectedPrescription) return;
 
-    // Use angles relative to calibration offsets
+    // Use angles relative to calibration offsets and normalize to -180 to 180
     const adjustedAngles = {
-      pitch: liveAngles.pitch - (calibrationOffsets.pitch || 0),
-      yaw: liveAngles.yaw - (calibrationOffsets.yaw || 0),
+      pitch: normalizeAngle(liveAngles.pitch - (calibrationOffsets.pitch || 0)),
+      yaw: normalizeAngle(liveAngles.yaw - (calibrationOffsets.yaw || 0)),
     };
 
     // Progress calculation
@@ -342,11 +350,12 @@ function LiveSession() {
 
   // Gauge calculations (use adjusted angles relative to calibration)
   const adjustedAnglesForUI = {
-    pitch: liveAngles.pitch - (calibrationOffsets.pitch || 0),
-    yaw: liveAngles.yaw - (calibrationOffsets.yaw || 0),
+    pitch: normalizeAngle(liveAngles.pitch - (calibrationOffsets.pitch || 0)),
+    yaw: normalizeAngle(liveAngles.yaw - (calibrationOffsets.yaw || 0)),
   };
-  const pitchGaugePercentage = ((adjustedAnglesForUI.pitch + 90) / 180) * 100;
-  const yawGaugePercentage = ((adjustedAnglesForUI.yaw + 90) / 180) * 100;
+  // Map -90 to 90 degree range to 0-100% for gauge display
+  const pitchGaugePercentage = Math.max(0, Math.min(100, ((adjustedAnglesForUI.pitch + 90) / 180) * 100));
+  const yawGaugePercentage = Math.max(0, Math.min(100, ((adjustedAnglesForUI.yaw + 90) / 180) * 100));
 
   return (
     <section className="live-session">
