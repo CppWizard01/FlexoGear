@@ -1,4 +1,4 @@
-// Updated LiveSession.js with Automation Logic
+// Updated LiveSession.js with Gamepad Logic
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -20,6 +20,10 @@ const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
 const MOTOR_POS_TOP = { a1: "0", a2: "180", a3: "180" };
 const MOTOR_POS_BOTTOM = { a1: "180", a2: "0", a3: "0" };
 const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" };
+// --- NEW GAMEPAD PRESETS ---
+const MOTOR_POS_LEFT = { a1: "0", a2: "0", a3: "0" };
+const MOTOR_POS_RIGHT = { a1: "180", a2: "180", a3: "0" };
+
 const AUTOMATION_DELAY_MS = 2000; // 2-second gap
 
 // --- MATH HELPERS (QUATERNION LOGIC) ---
@@ -641,6 +645,56 @@ function LiveSession() {
         >
           Send Motor Commands
         </button>
+
+        {/* --- NEW GAMEPAD SECTION --- */}
+        <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem" }}>
+          Motor Presets (Gamepad)
+        </h3>
+        <div className="gamepad-controls">
+          {/* Row 1 */}
+          <div /> {/* Empty grid cell */}
+          <button
+            className="gamepad-btn"
+            onClick={() => sendMotorCommand(MOTOR_POS_TOP)}
+            disabled={connectionStatus !== "Connected"}
+          >
+            ▲
+          </button>
+          <div /> {/* Empty grid cell */}
+          {/* Row 2 */}
+          <button
+            className="gamepad-btn"
+            onClick={() => sendMotorCommand(MOTOR_POS_LEFT)}
+            disabled={connectionStatus !== "Connected"}
+          >
+            ◄
+          </button>
+          <button
+            className="gamepad-btn"
+            onClick={() => sendMotorCommand(MOTOR_POS_CENTER)}
+            disabled={connectionStatus !== "Connected"}
+          >
+            ●
+          </button>
+          <button
+            className="gamepad-btn"
+            onClick={() => sendMotorCommand(MOTOR_POS_RIGHT)}
+            disabled={connectionStatus !== "Connected"}
+          >
+            ►
+          </button>
+          {/* Row 3 */}
+          <div /> {/* Empty grid cell */}
+          <button
+            className="gamepad-btn"
+            onClick={() => sendMotorCommand(MOTOR_POS_BOTTOM)}
+            disabled={connectionStatus !== "Connected"}
+          >
+            ▼
+          </button>
+          <div /> {/* Empty grid cell */}
+        </div>
+        {/* --- END NEW GAMEPAD SECTION --- */}
       </div>
 
       {/* EXERCISE CONTROLS */}
@@ -668,7 +722,6 @@ function LiveSession() {
             </option>
           ))}
         </select>
-
         <div className="control-buttons-row">
           <button
             id="startExerciseBtn"
@@ -679,28 +732,29 @@ function LiveSession() {
           </button>
           <button
             id="stopExerciseBtn"
-            onClick={() => handleStopSession(false)} // This is the normal "Stop"
+            onClick={() => handleStopSession(false)}
             disabled={!isSessionActive}
           >
             Stop Session
           </button>
+          <button
+            id="emergencyStopBtn"
+            onClick={handleEmergencyStop}
+            disabled={connectionStatus !== "Connected"}
+            style={{
+              width: "100%",
+              marginTop: "1rem",
+              backgroundColor: "var(--status-error)", // <-- FIXED
+              color: "white",
+              borderColor: "var(--status-error)", // <-- FIXED
+              padding: "1rem",
+              fontSize: "1rem",
+              borderRadius: "8px",
+            }}
+          >
+            EMERGENCY STOP (Motors to Center)
+          </button>
         </div>
-
-        {/* --- NEW EMERGENCY STOP BUTTON --- */}
-        <button
-          id="emergencyStopBtn"
-          onClick={handleEmergencyStop}
-          disabled={connectionStatus !== "Connected"}
-          style={{
-            width: "100%",
-            marginTop: "1rem",
-            backgroundColor: "var(--status-danger)", // Assumes you have this CSS variable
-            color: "white",
-            borderColor: "var(--status-danger-dark)",
-          }}
-        >
-          EMERGENCY STOP (Motors to Center)
-        </button>
       </div>
     </section>
   );
