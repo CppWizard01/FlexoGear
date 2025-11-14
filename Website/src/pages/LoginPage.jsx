@@ -38,7 +38,7 @@ function LoginPage() {
     <div className="login-page">
       <div className="login-container">
         {/* <LoginMascot /> */}
-        <h1 className="login-title">ExoRehab Portal</h1>
+        <h1 className="login-title">FlexoGear</h1>
         <p className="login-subtitle">Wearable Wrist Rehabilitation</p>
 
         <form onSubmit={handleLogin} className="login-form">
