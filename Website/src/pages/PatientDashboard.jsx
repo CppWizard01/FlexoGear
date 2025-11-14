@@ -30,7 +30,6 @@ function PatientDashboard({ onLogout }) {
       <header className="dashboard-header">
         <div className="header-content">
           <h1>Welcome Back, {patientName}</h1>
-          <span className="header-watermark">FlexoGear</span>
         </div>
         <button onClick={onLogout} className="logout-button">
           Logout

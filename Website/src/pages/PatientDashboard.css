@@ -487,3 +487,24 @@ input[type="number"]:focus,
     display: none; /* Hide huge watermark on mobile */
   }
 }
+
+/* Add this to your PatientDashboard.css */
+
+.logout-button {
+  background-color: #fee2e2; /* A light red/pink */
+  color: #dc2626;            /* A strong red text color for contrast */
+  border: 1px solid #fecaca; /* A light red border */
+  
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  
+  /* This makes the color change smooth */
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.logout-button:hover {
+  background-color: #fecaca; /* A slightly darker red */
+  color: #b91c1c;            /* A darker red text */
+}
