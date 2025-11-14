@@ -20,9 +20,16 @@ const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
 const MOTOR_POS_TOP = { a1: "0", a2: "180", a3: "180" };
 const MOTOR_POS_BOTTOM = { a1: "180", a2: "0", a3: "0" };
 const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" };
-// --- NEW GAMEPAD PRESETS ---
 const MOTOR_POS_LEFT = { a1: "0", a2: "0", a3: "0" };
 const MOTOR_POS_RIGHT = { a1: "180", a2: "180", a3: "0" };
+
+const MOTOR_COMMAND_MAP = {
+  TOP: MOTOR_POS_TOP,
+  BOTTOM: MOTOR_POS_BOTTOM,
+  LEFT: MOTOR_POS_LEFT,
+  RIGHT: MOTOR_POS_RIGHT,
+  CENTER: MOTOR_POS_CENTER,
+};
 
 const AUTOMATION_DELAY_MS = 2000; // 2-second gap
 
@@ -96,20 +103,20 @@ function LiveSession() {
 
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [isCalibrated, setIsCalibrated] = useState(false);
-  
+
   // Motor angle manual inputs
   const [anglePreset1, setAnglePreset1] = useState("90");
   const [anglePreset2, setAnglePreset2] = useState("90");
   const [anglePreset3, setAnglePreset3] = useState("90");
 
   const [isAutomating, setIsAutomating] = useState(false);
-  const [automationStep, setAutomationStep] = useState(0); 
+  const [automationStep, setAutomationStep] = useState(0);
 
   const repPhaseRef = useRef("start");
   const commandCharacteristicRef = useRef(null);
   const deviceRef = useRef(null);
   const rawQuaternionRef = useRef({ w: 1, x: 0, y: 0, z: 0 });
-  const automationTimerRef = useRef(null); 
+  const automationTimerRef = useRef(null);
   const calibrationQuaternionRef = useRef(null); // <-- FIX 1: Use ref instead of state
 
   useEffect(() => {
@@ -168,8 +175,11 @@ function LiveSession() {
             rawQuaternionRef.current = currentQ;
 
             let displayQ = currentQ;
-            if (calibrationQuaternionRef.current) { // <-- FIX 2: Read from ref
-              const calInverse = conjugateQuaternion(calibrationQuaternionRef.current);
+            if (calibrationQuaternionRef.current) {
+              // <-- FIX 2: Read from ref
+              const calInverse = conjugateQuaternion(
+                calibrationQuaternionRef.current
+              );
               displayQ = multiplyQuaternions(calInverse, currentQ);
             }
 
@@ -194,7 +204,7 @@ function LiveSession() {
     commandCharacteristicRef.current = null;
     deviceRef.current = null;
     setIsSessionActive(false);
-    setIsAutomating(false); 
+    setIsAutomating(false);
     clearTimeout(automationTimerRef.current);
   };
 
@@ -208,7 +218,7 @@ function LiveSession() {
     setIsCalibrating(false);
     setIsCalibrated(true);
     setCurrentStepText("Calibrated. Select an exercise.");
-    
+
     // Force angles to 0 for immediate feedback
     setLiveAngles({ pitch: 0, yaw: 0 });
   };
@@ -302,7 +312,7 @@ function LiveSession() {
   }, [
     liveAngles,
     isSessionActive,
-    isAutomating, 
+    isAutomating,
     repsInSet,
     currentSet,
     selectedPrescription,
@@ -310,66 +320,69 @@ function LiveSession() {
   ]);
 
   // --- NEW EFFECT for Automation Loop ---
+  // --- NEW EFFECT for Automation Loop (Data-Driven) ---
   useEffect(() => {
-    if (!isAutomating || !selectedPrescription) {
+    if (
+      !isAutomating ||
+      !selectedPrescription?.automationSequence ||
+      selectedPrescription.automationSequence.length === 0
+    ) {
+      return; // Do nothing if not automating or no sequence found
+    }
+
+    const sequence = selectedPrescription.automationSequence; // e.g., ["TOP", "CENTER", ...]
+
+    // 1. Get the command for the current step (index)
+    const commandKey = sequence[automationStep]; // automationStep is the index
+    const command = MOTOR_COMMAND_MAP[commandKey];
+
+    if (!command) {
+      console.error(`Invalid command key in sequence: ${commandKey}`);
+      // Handle error or stop
+      setIsAutomating(false);
       return;
     }
 
-    let command = null;
-    let nextStep = 0;
-    let instructionText = "";
+    // 2. Send the command
+    sendMotorCommand(command);
+    setCurrentStepText(`Moving to: ${commandKey}`);
 
-    switch (automationStep) {
-      case 0: // Go to Top
-        command = MOTOR_POS_TOP;
-        instructionText = "Moving to Top Position";
-        nextStep = 1;
-        break;
-      case 1: // Go to Center (from Top)
-        command = MOTOR_POS_CENTER;
-        instructionText = "Returning to Center";
-        nextStep = 2;
-        break;
-      case 2: // Go to Bottom
-        command = MOTOR_POS_BOTTOM;
-        instructionText = "Moving to Bottom Position";
-        nextStep = 3;
-        break;
-      case 3: // Go to Center (from Bottom) -> This completes 1 rep
-        command = MOTOR_POS_CENTER;
-        instructionText = "Returning to Center (Rep Complete)";
-        nextStep = 0; // Loop back to Top
+    // 3. Determine the next step index
+    let nextStepIndex = automationStep + 1;
+    let isRepComplete = false;
 
-        // --- Rep and Set Logic ---
-        const newRep = repsInSet + 1;
-        if (newRep >= selectedPrescription.targetReps) {
-          const newSet = currentSet + 1;
-          if (newSet > selectedPrescription.targetSets) {
-            handleStopSession(true);
-            return; // Stop the loop
-          } else {
-            setCurrentSet(newSet);
-            setRepsInSet(0);
-            instructionText = `Rest. Get Ready for Set ${newSet}`;
-          }
+    // 4. Check if this step was the end of the sequence (one rep)
+    if (nextStepIndex >= sequence.length) {
+      nextStepIndex = 0; // Loop back to the start of the sequence
+      isRepComplete = true; // This rep is finished
+    }
+
+    // 5. If rep is complete, update rep/set counts
+    if (isRepComplete) {
+      const newRep = repsInSet + 1;
+
+      if (newRep >= selectedPrescription.targetReps) {
+        const newSet = currentSet + 1;
+
+        if (newSet > selectedPrescription.targetSets) {
+          handleStopSession(true); // Session complete
+          return; // Stop the loop
         } else {
-          setRepsInSet(newRep);
+          setCurrentSet(newSet);
+          setRepsInSet(0);
+          setCurrentStepText(`Rest. Get Ready for Set ${newSet}`);
         }
-        break;
-      default:
-        break;
+      } else {
+        setRepsInSet(newRep);
+      }
     }
 
-    if (command) {
-      sendMotorCommand(command);
-      setCurrentStepText(instructionText);
-    }
-
+    // 6. Set the timer for the next step in the sequence
     automationTimerRef.current = setTimeout(() => {
-      setAutomationStep(nextStep);
+      setAutomationStep(nextStepIndex);
     }, AUTOMATION_DELAY_MS);
 
-    // Update progress bar
+    // Update progress bar (This logic is unchanged)
     const totalRepsTarget =
       selectedPrescription.targetReps * selectedPrescription.targetSets;
     const completedRepsTotal =
@@ -383,7 +396,7 @@ function LiveSession() {
     return () => clearTimeout(automationTimerRef.current);
   }, [
     isAutomating,
-    automationStep,
+    automationStep, // This is the index
     selectedPrescription,
     repsInSet,
     currentSet,
@@ -401,10 +414,15 @@ function LiveSession() {
     repPhaseRef.current = "start";
     setIsSessionActive(true);
 
-    if (selectedPrescription.exerciseName === "Wrist Waves") {
-      setAutomationStep(0); 
-      setIsAutomating(true); 
+    // NEW LOGIC: Check for an automation sequence
+    if (
+      selectedPrescription.automationSequence &&
+      selectedPrescription.automationSequence.length > 0
+    ) {
+      setAutomationStep(0); // Start at the beginning (index 0)
+      setIsAutomating(true);
     } else {
+      // This is a manual (IMU-based) exercise
       setIsAutomating(false);
     }
   };
@@ -445,7 +463,10 @@ function LiveSession() {
             maxRad: Math.round(maxValues.rad),
             maxUln: Math.round(maxValues.uln),
             timestamp: serverTimestamp(),
-            wasAutomated: selectedPrescription.exerciseName === "Wrist Waves", 
+            wasAutomated: !!(
+              selectedPrescription.automationSequence &&
+              selectedPrescription.automationSequence.length > 0
+            ),
           });
         } catch (err) {
           console.error("Save failed", err);
@@ -701,7 +722,7 @@ function LiveSession() {
           onChange={(e) => {
             const p = prescriptions.find((pre) => pre.id === e.target.value);
             setSelectedPrescription(p);
-            setIsSessionActive(false); 
+            setIsSessionActive(false);
             setIsAutomating(false);
             clearTimeout(automationTimerRef.current);
             setCurrentStepText("Ready to Start");
@@ -740,9 +761,9 @@ function LiveSession() {
             style={{
               width: "100%",
               marginTop: "1rem",
-              backgroundColor: "var(--status-error)", 
+              backgroundColor: "var(--status-error)",
               color: "white",
-              borderColor: "var(--status-error)", 
+              borderColor: "var(--status-error)",
               padding: "1rem",
               fontSize: "1rem",
               borderRadius: "8px",
