@@ -1,4 +1,4 @@
-// Updated LiveSession.js with Gamepad Logic
+// Updated LiveSession.js with Gamepad Logic & Calibration Fix
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -46,30 +46,17 @@ const quaternionToEuler = (q) => {
   const { x: i, y: j, z: k, w: real } = q;
 
   // --- GIMBAL LOCK CHECK ---
-  // We must check the "Pitch" value first.
-  // This is the part of the math that breaks.
   const gimbalCheck = 2.0 * (real * j - k * i); // This is 2.0 * (w*y - z*x)
 
-  // Define the angles
   let rollAngle, yawAngle;
-
-  const GIMBAL_TOLERANCE = 0.999; // When we are 99.9% to 90 degrees
+  const GIMBAL_TOLERANCE = 0.999; 
 
   if (Math.abs(gimbalCheck) > GIMBAL_TOLERANCE) {
     // --- WE ARE IN GIMBAL LOCK ---
-    // The device is pointing straight up or down.
-    // We cannot calculate Roll and Yaw independently.
-    // We must "lock" one angle (Roll) and put all rotation into the other (Yaw).
-
     rollAngle = 0; // Lock flexion at 0
-
-    // Calculate Yaw using a different, stable formula for this state
     yawAngle = Math.sign(gimbalCheck) * -2 * Math.atan2(i, real);
-
   } else {
     // --- NORMAL OPERATION ---
-    // We are not in gimbal lock, so the normal formulas are safe.
-
     // 1. Flexion/Extension (Roll, X-axis rotation)
     const sinr_cosp = 2.0 * (real * i + j * k);
     const cosr_cosp = 1.0 - 2.0 * (i * i + j * j);
@@ -109,22 +96,21 @@ function LiveSession() {
 
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [isCalibrated, setIsCalibrated] = useState(false);
-  const [calibrationQuaternion, setCalibrationQuaternion] = useState(null);
-
+  
   // Motor angle manual inputs
   const [anglePreset1, setAnglePreset1] = useState("90");
   const [anglePreset2, setAnglePreset2] = useState("90");
   const [anglePreset3, setAnglePreset3] = useState("90");
 
-  // --- NEW AUTOMATION STATE ---
   const [isAutomating, setIsAutomating] = useState(false);
-  const [automationStep, setAutomationStep] = useState(0); // 0:Top, 1:Center, 2:Bottom, 3:Center
+  const [automationStep, setAutomationStep] = useState(0); 
 
   const repPhaseRef = useRef("start");
   const commandCharacteristicRef = useRef(null);
   const deviceRef = useRef(null);
   const rawQuaternionRef = useRef({ w: 1, x: 0, y: 0, z: 0 });
-  const automationTimerRef = useRef(null); // Timer for automation loop
+  const automationTimerRef = useRef(null); 
+  const calibrationQuaternionRef = useRef(null); // <-- FIX 1: Use ref instead of state
 
   useEffect(() => {
     let unsubscribe = () => {};
@@ -182,8 +168,8 @@ function LiveSession() {
             rawQuaternionRef.current = currentQ;
 
             let displayQ = currentQ;
-            if (calibrationQuaternion) {
-              const calInverse = conjugateQuaternion(calibrationQuaternion);
+            if (calibrationQuaternionRef.current) { // <-- FIX 2: Read from ref
+              const calInverse = conjugateQuaternion(calibrationQuaternionRef.current);
               displayQ = multiplyQuaternions(calInverse, currentQ);
             }
 
@@ -204,11 +190,11 @@ function LiveSession() {
   const onDisconnected = () => {
     setConnectionStatus("Disconnected");
     setIsCalibrated(false);
-    setCalibrationQuaternion(null);
+    calibrationQuaternionRef.current = null; // <-- FIX 3: Clear the ref
     commandCharacteristicRef.current = null;
     deviceRef.current = null;
     setIsSessionActive(false);
-    setIsAutomating(false); // Stop automation on disconnect
+    setIsAutomating(false); 
     clearTimeout(automationTimerRef.current);
   };
 
@@ -218,10 +204,13 @@ function LiveSession() {
   };
 
   const handleCalibrate = () => {
-    setCalibrationQuaternion(rawQuaternionRef.current);
+    calibrationQuaternionRef.current = rawQuaternionRef.current; // <-- FIX 4: Set the ref
     setIsCalibrating(false);
     setIsCalibrated(true);
     setCurrentStepText("Calibrated. Select an exercise.");
+    
+    // Force angles to 0 for immediate feedback
+    setLiveAngles({ pitch: 0, yaw: 0 });
   };
 
   // --- HELPER to send motor commands ---
@@ -229,7 +218,6 @@ function LiveSession() {
     if (!commandCharacteristicRef.current) return;
     try {
       const encoder = new TextEncoder();
-      // Use the structure {a1, a2, a3} from the constants
       const payload = JSON.stringify(positions);
       const data = encoder.encode(payload);
       await commandCharacteristicRef.current.writeValue(data);
@@ -249,7 +237,6 @@ function LiveSession() {
 
   // --- EFFECT for IMU-based Rep Counting (Manual Mode) ---
   useEffect(() => {
-    // If automating, this whole effect is skipped.
     if (!isSessionActive || !selectedPrescription || isAutomating) return;
 
     const { pitch, yaw } = liveAngles;
@@ -307,7 +294,6 @@ function LiveSession() {
           setCurrentSet(newSet);
           setRepsInSet(0);
           setCurrentStepText(`Rest. Get Ready for Set ${newSet}`);
-          // TODO: Add a pause/rest timer here if needed
         }
       } else {
         setRepsInSet(newRep);
@@ -316,7 +302,7 @@ function LiveSession() {
   }, [
     liveAngles,
     isSessionActive,
-    isAutomating, // Dependency added
+    isAutomating, 
     repsInSet,
     currentSet,
     selectedPrescription,
@@ -325,7 +311,6 @@ function LiveSession() {
 
   // --- NEW EFFECT for Automation Loop ---
   useEffect(() => {
-    // Only run if automation is active
     if (!isAutomating || !selectedPrescription) {
       return;
     }
@@ -360,17 +345,14 @@ function LiveSession() {
         if (newRep >= selectedPrescription.targetReps) {
           const newSet = currentSet + 1;
           if (newSet > selectedPrescription.targetSets) {
-            // Session complete!
             handleStopSession(true);
             return; // Stop the loop
           } else {
-            // Start next set
             setCurrentSet(newSet);
             setRepsInSet(0);
             instructionText = `Rest. Get Ready for Set ${newSet}`;
           }
         } else {
-          // Increment rep
           setRepsInSet(newRep);
         }
         break;
@@ -378,13 +360,11 @@ function LiveSession() {
         break;
     }
 
-    // Send the motor command
     if (command) {
       sendMotorCommand(command);
       setCurrentStepText(instructionText);
     }
 
-    // Set timer for the next step
     automationTimerRef.current = setTimeout(() => {
       setAutomationStep(nextStep);
     }, AUTOMATION_DELAY_MS);
@@ -400,7 +380,6 @@ function LiveSession() {
         : 0
     );
 
-    // Cleanup function to clear timeout if component unmounts or state changes
     return () => clearTimeout(automationTimerRef.current);
   }, [
     isAutomating,
@@ -414,7 +393,6 @@ function LiveSession() {
     if (!selectedPrescription) return alert("Select an exercise first.");
     if (!isCalibrated) return alert("Calibrate device first.");
 
-    // Reset stats
     setRepsInSet(0);
     setCurrentSet(1);
     setExerciseProgress(0);
@@ -423,12 +401,10 @@ function LiveSession() {
     repPhaseRef.current = "start";
     setIsSessionActive(true);
 
-    // *** Check if automation should start ***
     if (selectedPrescription.exerciseName === "Wrist Waves") {
-      setAutomationStep(0); // Start from the first step
-      setIsAutomating(true); // This will trigger the automation useEffect
+      setAutomationStep(0); 
+      setIsAutomating(true); 
     } else {
-      // Not an automated exercise, just run manual IMU tracking
       setIsAutomating(false);
     }
   };
@@ -439,7 +415,6 @@ function LiveSession() {
   ) => {
     const wasActive = isSessionActive;
 
-    // Stop all activity
     setIsSessionActive(false);
     setIsAutomating(false);
     clearTimeout(automationTimerRef.current);
@@ -453,7 +428,6 @@ function LiveSession() {
     const totalCompletedReps =
       (currentSet - 1) * (selectedPrescription?.targetReps || 0) + repsInSet;
 
-    // Save session data, but NOT on emergency stop
     if (
       wasActive &&
       totalCompletedReps > 0 &&
@@ -471,25 +445,19 @@ function LiveSession() {
             maxRad: Math.round(maxValues.rad),
             maxUln: Math.round(maxValues.uln),
             timestamp: serverTimestamp(),
-            wasAutomated: selectedPrescription.exerciseName === "Wrist Waves", // Track if automated
+            wasAutomated: selectedPrescription.exerciseName === "Wrist Waves", 
           });
         } catch (err) {
           console.error("Save failed", err);
         }
       }
     }
-    // Reset reps even if not saved
     setRepsInSet(0);
   };
 
-  // --- NEW Emergency Stop Button Handler ---
   const handleEmergencyStop = () => {
-    // Stop session without saving
     handleStopSession(false, true);
-
-    // Send motors to safe center position
     sendMotorCommand(MOTOR_POS_CENTER);
-
     setCurrentStepText("EMERGENCY STOP. Motors at center.");
   };
 
@@ -733,7 +701,7 @@ function LiveSession() {
           onChange={(e) => {
             const p = prescriptions.find((pre) => pre.id === e.target.value);
             setSelectedPrescription(p);
-            setIsSessionActive(false); // Stop session on new selection
+            setIsSessionActive(false); 
             setIsAutomating(false);
             clearTimeout(automationTimerRef.current);
             setCurrentStepText("Ready to Start");
@@ -772,9 +740,9 @@ function LiveSession() {
             style={{
               width: "100%",
               marginTop: "1rem",
-              backgroundColor: "var(--status-error)", // <-- FIXED
+              backgroundColor: "var(--status-error)", 
               color: "white",
-              borderColor: "var(--status-error)", // <-- FIXED
+              borderColor: "var(--status-error)", 
               padding: "1rem",
               fontSize: "1rem",
               borderRadius: "8px",
