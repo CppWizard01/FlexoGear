@@ -482,6 +482,10 @@ void loop()
             Serial.print(" R:"); Serial.print(roll, 1);
             Serial.print(" P:"); Serial.print(pitch, 1);
             Serial.print(" Y:"); Serial.println(yaw, 1);
+            // --- ADD THIS ---
+            Serial.print("  |  Hand Cal: "); Serial.print(imu1_data.calibration);
+            Serial.print("  |  Arm Cal: "); Serial.println(imu2_data.calibration);
+            // ---------------
         }
     }
 }

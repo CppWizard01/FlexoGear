@@ -52,34 +52,27 @@ const conjugateQuaternion = (q) => {
 const quaternionToEuler = (q) => {
   const { x: i, y: j, z: k, w: real } = q;
 
-  // --- GIMBAL LOCK CHECK ---
-  const gimbalCheck = 2.0 * (real * j - k * i); // This is 2.0 * (w*y - z*x)
+  // Flexion/Extension (Pitch – X axis)
+  const sinp = 2 * (real * j - k * i);
+  let pitch;
 
-  let rollAngle, yawAngle;
-  const GIMBAL_TOLERANCE = 0.999; 
-
-  if (Math.abs(gimbalCheck) > GIMBAL_TOLERANCE) {
-    // --- WE ARE IN GIMBAL LOCK ---
-    rollAngle = 0; // Lock flexion at 0
-    yawAngle = Math.sign(gimbalCheck) * -2 * Math.atan2(i, real);
+  if (Math.abs(sinp) >= 1) {
+    pitch = Math.sign(sinp) * Math.PI / 2;
   } else {
-    // --- NORMAL OPERATION ---
-    // 1. Flexion/Extension (Roll, X-axis rotation)
-    const sinr_cosp = 2.0 * (real * i + j * k);
-    const cosr_cosp = 1.0 - 2.0 * (i * i + j * j);
-    rollAngle = Math.atan2(sinr_cosp, cosr_cosp);
-
-    // 2. Ulnar/Radial Deviation (Yaw, Z-axis rotation)
-    const siny_cosp = 2.0 * (real * k + i * j);
-    const cosy_cosp = 1.0 - 2.0 * (j * j + k * k);
-    yawAngle = Math.atan2(siny_cosp, cosy_cosp);
+    pitch = Math.asin(sinp);
   }
 
+  // Ulnar/Radial Deviation (Yaw – Z axis)
+  const siny_cosp = 2 * (real * k + i * j);
+  const cosy_cosp = 1 - 2 * (j * j + k * k);
+  const yaw = Math.atan2(siny_cosp, cosy_cosp);
+
   return {
-    pitch: -1 * rollAngle * (180 / Math.PI), // Flexion (Roll)
-    yaw: yawAngle * (180 / Math.PI),       // Deviation (Yaw)
+    pitch: -pitch * 180 / Math.PI,
+    yaw: yaw * 180 / Math.PI,
   };
 };
+
 
 function LiveSession() {
   const [connectionStatus, setConnectionStatus] = useState("Disconnected");
