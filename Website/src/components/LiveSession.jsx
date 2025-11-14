@@ -239,7 +239,9 @@ function LiveSession() {
   };
 
   // --- EFFECT for IMU-based Rep Counting (Manual Mode) ---
+  // --- EFFECT for IMU-based Rep Counting (Manual Mode ONLY) ---
   useEffect(() => {
+    // This hook now ONLY runs in manual mode
     if (!isSessionActive || !selectedPrescription || isAutomating) return;
 
     const { pitch, yaw } = liveAngles;
@@ -254,14 +256,6 @@ function LiveSession() {
         ? Math.min((completedRepsTotal / totalRepsTarget) * 100, 100)
         : 0
     );
-
-    // Update max range of motion
-    setMaxValues((prev) => ({
-      flex: Math.min(prev.flex, pitch),
-      ext: Math.max(prev.ext, pitch),
-      rad: Math.min(prev.rad, yaw),
-      uln: Math.max(prev.uln, yaw),
-    }));
 
     // Get instruction text from prescription
     const instructions = selectedPrescription.instructions || [];
@@ -311,9 +305,21 @@ function LiveSession() {
     selectedPrescription,
     currentStepIndex,
   ]);
+  // --- NEW EFFECT for Max Value Recording (Runs in ALL modes) ---
+  useEffect(() => {
+    // Only run if the session is active and device is calibrated
+    if (!isSessionActive || !isCalibrated) return;
 
-  // --- NEW EFFECT for Automation Loop ---
-  // --- NEW EFFECT for Automation Loop (Data-Driven) ---
+    const { pitch, yaw } = liveAngles; // Update max range of motion
+
+    setMaxValues((prev) => ({
+      flex: Math.min(prev.flex, pitch),
+      ext: Math.max(prev.ext, pitch),
+      rad: Math.min(prev.rad, yaw),
+      uln: Math.max(prev.uln, yaw),
+    }));
+  }, [liveAngles, isSessionActive, isCalibrated]);
+  // --- NEW EFFECT for Automation Loop (Data-Driven AND Fixed) ---
   useEffect(() => {
     if (
       !isAutomating ||
@@ -323,76 +329,61 @@ function LiveSession() {
       return; // Do nothing if not automating or no sequence found
     }
 
-    const sequence = selectedPrescription.automationSequence; // e.g., ["TOP", "CENTER", ...]
+    const sequence = selectedPrescription.automationSequence; // 1. Get the command for the current step (index)
 
-    // 1. Get the command for the current step (index)
-    const commandKey = sequence[automationStep]; // automationStep is the index
+    const commandKey = sequence[automationStep];
     const command = MOTOR_COMMAND_MAP[commandKey];
 
     if (!command) {
       console.error(`Invalid command key in sequence: ${commandKey}`);
-      // Handle error or stop
-      setIsAutomating(false);
+      setIsAutomating(false); // Stop on error
       return;
-    }
+    } // 2. Send the command
 
-    // 2. Send the command
     sendMotorCommand(command);
-    setCurrentStepText(`Moving to: ${commandKey}`);
+    setCurrentStepText(`Moving to: ${commandKey}`); // 3. Determine the next step index
 
-    // 3. Determine the next step index
     let nextStepIndex = automationStep + 1;
-    let isRepComplete = false;
+    let isRepComplete = false; // 4. Check if this step was the end of the sequence (one rep)
 
-    // 4. Check if this step was the end of the sequence (one rep)
     if (nextStepIndex >= sequence.length) {
       nextStepIndex = 0; // Loop back to the start of the sequence
       isRepComplete = true; // This rep is finished
-    }
+    } // 5. If rep is complete, update rep/set counts (FUNCTIONAL UPDATE)
 
-    // 5. If rep is complete, update rep/set counts
     if (isRepComplete) {
-      const newRep = repsInSet + 1;
+      setCurrentSet((prevSet) => {
+        const newRepetitionCount = prevSet + 1;
 
-      if (newRep >= selectedPrescription.targetReps) {
-        const newSet = currentSet + 1;
-
-        if (newSet > selectedPrescription.targetSets) {
+        if (newRepetitionCount > selectedPrescription.targetSets) {
           handleStopSession(true); // Session complete
-          return; // Stop the loop
+          return prevSet; // Return old state, session will stop
         } else {
-          setCurrentSet(newSet);
-          setRepsInSet(0);
-          setCurrentStepText(`Rest. Get Ready for Set ${newSet}`);
+          // We are starting the next repetition
+          setCurrentStepText(
+            `Rest. Get Ready for Repetition ${newRepetitionCount}`
+          ); // Update progress bar at the same time
+          const totalRepsTarget = selectedPrescription.targetSets || 1;
+          const completedRepsTotal = newRepetitionCount - 1; // e.g., 1 of 15
+          setExerciseProgress(
+            totalRepsTarget > 0
+              ? Math.min((completedRepsTotal / totalRepsTarget) * 100, 100)
+              : 0
+          );
+          return newRepetitionCount; // Return new state
         }
-      } else {
-        setRepsInSet(newRep);
-      }
-    }
+      });
+    } // 6. Set the timer for the next step in the sequence
 
-    // 6. Set the timer for the next step in the sequence
     automationTimerRef.current = setTimeout(() => {
       setAutomationStep(nextStepIndex);
     }, AUTOMATION_DELAY_MS);
-
-    // Update progress bar (This logic is unchanged)
-    const totalRepsTarget =
-      selectedPrescription.targetReps * selectedPrescription.targetSets;
-    const completedRepsTotal =
-      (currentSet - 1) * selectedPrescription.targetReps + repsInSet;
-    setExerciseProgress(
-      totalRepsTarget > 0
-        ? Math.min((completedRepsTotal / totalRepsTarget) * 100, 100)
-        : 0
-    );
 
     return () => clearTimeout(automationTimerRef.current);
   }, [
     isAutomating,
     automationStep, // This is the index
-    selectedPrescription,
-    repsInSet,
-    currentSet,
+    selectedPrescription, // REMOVED repsInSet and currentSet to fix race condition
   ]);
 
   const handleStartSession = () => {
@@ -450,7 +441,9 @@ function LiveSession() {
         try {
           await addDoc(collection(db, "users01", user.uid, "sessions"), {
             exerciseName: selectedPrescription.exerciseName,
-            reps: totalCompletedReps,
+            reps: autoCompleted
+              ? selectedPrescription.targetSets
+              : totalCompletedReps,
             maxFlex: Math.round(maxValues.flex),
             maxExt: Math.round(maxValues.ext),
             maxRad: Math.round(maxValues.rad),
@@ -593,14 +586,9 @@ function LiveSession() {
 
       {/* STATS */}
       <div className="session-stats">
+        {/* We removed the old "Reps" counter */}
         <div>
-          <h4>Reps</h4>
-          <p>
-            {repsInSet} / {selectedPrescription?.targetReps || "-"}
-          </p>
-        </div>
-        <div>
-          <h4>Sets</h4>
+          <h4>Repetitions</h4>
           <p>
             {currentSet} / {selectedPrescription?.targetSets || "-"}
           </p>
