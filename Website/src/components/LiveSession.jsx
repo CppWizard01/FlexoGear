@@ -45,17 +45,45 @@ const conjugateQuaternion = (q) => {
 const quaternionToEuler = (q) => {
   const { x: i, y: j, z: k, w: real } = q;
 
-  const sinr_cosp = 2.0 * (real * i + j * k);
-  const cosr_cosp = 1.0 - 2.0 * (i * i + j * j);
-  const pitchAngle = Math.atan2(sinr_cosp, cosr_cosp);
+  // --- GIMBAL LOCK CHECK ---
+  // We must check the "Pitch" value first.
+  // This is the part of the math that breaks.
+  const gimbalCheck = 2.0 * (real * j - k * i); // This is 2.0 * (w*y - z*x)
 
-  const siny_cosp = 2.0 * (real * k + i * j);
-  const cosy_cosp = 1.0 - 2.0 * (j * j + k * k);
-  const yawAngle = Math.atan2(siny_cosp, cosy_cosp);
+  // Define the angles
+  let rollAngle, yawAngle;
+
+  const GIMBAL_TOLERANCE = 0.999; // When we are 99.9% to 90 degrees
+
+  if (Math.abs(gimbalCheck) > GIMBAL_TOLERANCE) {
+    // --- WE ARE IN GIMBAL LOCK ---
+    // The device is pointing straight up or down.
+    // We cannot calculate Roll and Yaw independently.
+    // We must "lock" one angle (Roll) and put all rotation into the other (Yaw).
+
+    rollAngle = 0; // Lock flexion at 0
+
+    // Calculate Yaw using a different, stable formula for this state
+    yawAngle = Math.sign(gimbalCheck) * -2 * Math.atan2(i, real);
+
+  } else {
+    // --- NORMAL OPERATION ---
+    // We are not in gimbal lock, so the normal formulas are safe.
+
+    // 1. Flexion/Extension (Roll, X-axis rotation)
+    const sinr_cosp = 2.0 * (real * i + j * k);
+    const cosr_cosp = 1.0 - 2.0 * (i * i + j * j);
+    rollAngle = Math.atan2(sinr_cosp, cosr_cosp);
+
+    // 2. Ulnar/Radial Deviation (Yaw, Z-axis rotation)
+    const siny_cosp = 2.0 * (real * k + i * j);
+    const cosy_cosp = 1.0 - 2.0 * (j * j + k * k);
+    yawAngle = Math.atan2(siny_cosp, cosy_cosp);
+  }
 
   return {
-    pitch: -1 * pitchAngle * (180 / Math.PI),
-    yaw: yawAngle * (180 / Math.PI),
+    pitch: -1 * rollAngle * (180 / Math.PI), // Flexion (Roll)
+    yaw: yawAngle * (180 / Math.PI),       // Deviation (Yaw)
   };
 };
 
