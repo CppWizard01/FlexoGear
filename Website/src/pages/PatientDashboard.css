@@ -5,6 +5,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* Vibrant gradient background flowing from cool to warm */
+  background: linear-gradient(180deg, #e0f2fe 0%, #f1f5f9 50%, #fef3e8 100%);
 }
 
 .dashboard-main {
@@ -21,11 +23,12 @@
 /* --- GLOBAL CARD STYLES --- */
 .live-session,
 .progress-tracking {
-  background-color: var(--card-background);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   padding: 2rem;
   border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.1), 
+              0 10px 15px -3px rgba(14, 165, 233, 0.05);
+  border: 1px solid rgba(14, 165, 233, 0.15);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -35,8 +38,12 @@
 h2 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  border-bottom: 2px solid;
+  border-image: linear-gradient(90deg, var(--brand-primary), var(--brand-accent)) 1;
   padding-bottom: 1rem;
   margin-bottom: 0.5rem;
 }
@@ -63,22 +70,21 @@ h2 {
 }
 
 .logout-button {
-  background-color: #fef2f2; /* Light red */
-  color: #dc2626; /* Red */
-  border: 1px solid #fecaca;
+  background-color: var(--bg-warm); /* Pale Peach */
+  color: var(--brand-accent);       /* Orange Text */
+  border: 1px solid var(--brand-accent-light);
   padding: 0.6rem 1rem;
   border-radius: 6px;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  z-index: 10;
   transition: all 0.2s ease;
 }
 
 .logout-button:hover {
-  background-color: #fee2e2;
-  border-color: #fca5a5;
-  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+  background-color: #ffedd5; /* Slightly darker peach hover */
+  border-color: var(--brand-accent);
+  box-shadow: 0 2px 5px rgba(249, 115, 22, 0.15);
 }
 
 /* --- SESSION STATUS (Refactored) --- */
@@ -153,21 +159,21 @@ h2 {
 
 /* State: Calibrating */
 .status-calibrating {
-  background-color: #fffbeb; /* Light yellow */
-  border-color: #fde68a;
+  background-color: var(--bg-warm); /* Pale Peach */
+  border-color: var(--brand-accent-light);
 }
 .status-calibrating .status-icon {
-  color: #d97706; /* Amber */
+  color: var(--brand-accent); /* Orange Icon */
 }
 .status-calibrating .status-text h4 {
-  color: #b45309;
+  color: #c2410c; /* Darker Orange for text readability */
 }
 .status-action-btn.calibrate-btn {
-  background-color: #f59e0b; /* Amber */
+  background-color: var(--brand-accent); /* Vibrant Orange Button */
   color: white;
 }
 .status-action-btn.calibrate-btn:hover {
-  background-color: #d97706;
+  background-color: #ea580c; /* Darker Orange Hover */
 }
 
 /* State: Ready / In-Session */
@@ -226,20 +232,23 @@ h2 {
   border-radius: 10px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* New Gradient and animated stripes */
-  background-color: var(--brand-primary);
-  background-image: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.15) 25%,
-    transparent 25%,
-    transparent 50%,
-    rgba(255, 255, 255, 0.15) 50%,
-    rgba(255, 255, 255, 0.15) 75%,
-    transparent 75%,
-    transparent
+  /* "Sunset" Gradient (Blue to Peach) */
+  background: linear-gradient(
+    90deg, 
+    var(--brand-primary) 0%, 
+    var(--brand-secondary) 50%, 
+    var(--brand-accent) 100%
   );
-  background-size: 40px 40px;
-  animation: progress-bar-stripes 2s linear infinite;
+  
+  background-size: 200% 100%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Animate the gradient flow */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .progress-bar-text {
@@ -250,18 +259,8 @@ h2 {
   transform: translateY(-50%);
   font-size: 0.75rem;
   font-weight: 700;
-  color: #0c4a6e; /* Darker blue for contrast on the bar */
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.4);
+  color: var(--text-primary);
   z-index: 2;
-}
-
-@keyframes progress-bar-stripes {
-  from {
-    background-position: 40px 0;
-  }
-  to {
-    background-position: 0 0;
-  }
 }
 
 /* --- LIVE DATA (Refactored) --- */
@@ -277,20 +276,32 @@ h2 {
 }
 
 .live-data-metric {
-  background-color: #f8fafc; /* Light bg for each metric */
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
   padding: 1.5rem 1rem;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(14, 165, 233, 0.2);
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.08);
+  transition: all 0.3s ease;
+}
+
+.live-data-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
 }
 
 .metric-value {
-  font-size: 3.5rem; /* <-- THE HERO! */
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 3.5rem;
+  font-weight: 800; /* Thicker font */
+  color: var(--brand-primary); /* Make it BLUE by default */
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
+}
+
+/* Target the second metric (Ulnar/Radial) to make it ORANGE */
+.live-data-metric:nth-child(2) .metric-value {
+  color: var(--brand-accent); /* Make the second number ORANGE */
 }
 
 .metric-value-suffix {
@@ -555,17 +566,21 @@ h2 {
 /* CHART STYLES */
 .chart-container {
   background-color: white;
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: 16px;
+  padding: 2rem;
   border: 1px solid var(--border-color);
-  margin-bottom: 1.5rem; /* Space between chart and list */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+              0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  height: auto;
+  min-height: 350px;
+  margin-bottom: 2rem;
 }
 
 .chart-container strong {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   display: block;
 }
 
@@ -653,118 +668,4 @@ h2 {
   .dashboard-main {
     grid-template-columns: 1fr;
   }
-}
-
-/* In PatientDashboard.css */
-
-/* Update the Logout Button */
-.logout-button {
-  background-color: var(--bg-warm); /* Pale Peach */
-  color: var(--brand-accent);       /* Orange Text */
-  border: 1px solid var(--brand-accent-light);
-  /* ... keep padding/radius ... */
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logout-button:hover {
-  background-color: #ffedd5; /* Slightly darker peach hover */
-  border-color: var(--brand-accent);
-  box-shadow: 0 2px 5px rgba(249, 115, 22, 0.15);
-}
-
-/* In PatientDashboard.css */
-
-/* State: Calibrating (Warm & Noticeable) */
-.status-calibrating {
-  background-color: var(--bg-warm); /* Pale Peach */
-  border-color: var(--brand-accent-light);
-}
-.status-calibrating .status-icon {
-  color: var(--brand-accent); /* Orange Icon */
-}
-.status-calibrating .status-text h4 {
-  color: #c2410c; /* Darker Orange for text readability */
-}
-.status-action-btn.calibrate-btn {
-  background-color: var(--brand-accent); /* Vibrant Orange Button */
-  color: white;
-}
-.status-action-btn.calibrate-btn:hover {
-  background-color: #ea580c; /* Darker Orange Hover */
-}
-
-/* In PatientDashboard.css */
-
-.progress-bar-fill {
-  height: 100%;
-  border-radius: 10px;
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* --- NEW: "Sunset" Gradient (Blue to Peach) --- */
-  background: linear-gradient(
-    90deg, 
-    var(--brand-primary) 0%, 
-    var(--brand-secondary) 50%, 
-    var(--brand-accent) 100%
-  );
-  
-  /* Optional: Keep the stripes if you like them, 
-     or remove this block for a smooth gradient */
-  background-size: 200% 100%;
-  animation: gradient-shift 3s ease infinite;
-}
-
-/* Animate the gradient flow */
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Update text color to match the warm tone */
-.progress-bar-text {
-  /* ... keep positioning ... */
-  position: absolute;
-  width: 100%;
-  text-align: center;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.75rem;
-  font-weight: 700;
-  
-  color: var(--text-primary); /* Dark text sits better on light bars */
-  /* OR if the bar is dark: color: white; */
-  z-index: 2;
-}
-
-/* src/pages/PatientDashboard.css */
-
-.chart-container {
-  background-color: white; /* Distinct background */
-  border-radius: 16px; /* Smoother, larger corners */
-  padding: 2rem; /* MORE padding to push content inside */
-  
-  /* Stronger definition */
-  border: 1px solid var(--border-color);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
-              0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  
-  /* Ensure it doesn't overflow vertically */
-  height: auto;
-  min-height: 350px;
-  margin-bottom: 2rem;
-}
-
-/* Add some space below the title */
-.chart-container strong {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-  display: block;
 }
