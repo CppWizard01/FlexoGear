@@ -3,32 +3,38 @@
 
 /* src/index.css */
 
+/* src/index.css */
+
 :root {
-  /* --- THEME: Modern Clinical Light --- */
+  /* --- THEME: Modern Clinical (Warm) --- */
   
-  /* Backgrounds */
-  --app-background: #f8fafc;    /* Very light grey/blue tint */
-  --card-background: #ffffff;   /* Pure white */
-  --input-background: #ffffff;
+  /* ... your existing backgrounds ... */
+  --app-background: #f8fafc;
+  --card-background: #ffffff;
   
-  /* Text */
-  --text-primary: #0f172a;      /* Dark Slate (Almost Black) */
-  --text-secondary: #64748b;    /* Muted Slate */
+  /* ... your existing text ... */
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
   --text-on-accent: #ffffff;
   
-  /* Brand Colors */
-  --brand-primary: #0ea5e9;     /* Sky Blue (Trustworthy) */
-  --brand-secondary: #3b82f6;   /* Royal Blue */
+  /* --- BRAND COLORS (UPDATED) --- */
+  --brand-primary: #0ea5e9;       /* Sky Blue */
+  --brand-secondary: #3b82f6;     /* Royal Blue */
+  
+  /* NEW: Warm Accents (Peach/Orange) */
+  --brand-accent: #f97316;        /* Vibrant Orange */
+  --brand-accent-light: #fdba74;  /* Soft Peach */
+  --bg-warm: #fff7ed;             /* Very pale peach background */
   
   /* Functional Colors */
-  --status-success: #10b981;    /* Emerald Green */
-  --status-error: #ef4444;      /* Soft Red */
-  --status-warning: #f59e0b;    /* Amber */
+  --status-success: #10b981;
+  --status-error: #ef4444;
+  --status-warning: #f59e0b;
   
-  /* UI Elements */
-  --border-color: #e2e8f0;      /* Light gray border */
+  /* ... rest of your variables ... */
+  --border-color: #e2e8f0;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --radius: 12px;
 }
 

@@ -90,57 +90,78 @@ function ProgressTracker({ patientId }) {
         ) : sessionHistory.length === 0 ? (
           <p>No session data yet to display chart.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
+          /* Inside ProgressTracker.js */
+
+          <ResponsiveContainer width="100%" height={350}>
             <LineChart
               data={formatChartData(sessionHistory)}
-              margin={{ top: 20, right: 20, left: -10, bottom: 5 }}
+              // FIX 1: Add 'left: 10' or '20' to give the SVG container some internal padding
+              margin={{ top: 10, right: 30, left: 20, bottom: 10 }}
             >
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="var(--border-color)"
+                vertical={false}
               />
-              <XAxis dataKey="date" stroke="var(--text-secondary)" />
+              <XAxis
+                dataKey="date"
+                stroke="var(--text-secondary)"
+                tick={{ fontSize: 12 }}
+                tickMargin={10}
+              />
               <YAxis
                 stroke="var(--text-secondary)"
+                // FIX 2: Increased width from 45 to 60 to fit "-180" AND the label
+                width={60}
+                tick={{ fontSize: 12 }}
+                domain={[-180, 180]}
                 label={{
-                  value: "Degrees",
+                  value: "Degrees (°)",
                   angle: -90,
-                  position: "insideLeft",
+                  position: "insideLeft", // Puts it inside the reserved width
                   fill: "var(--text-secondary)",
+                  style: { textAnchor: "middle" },
+                  // FIX 3: No negative offset needed if width is sufficient,
+                  // but we can add a small 'dy' to center it vertically if needed.
                 }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "var(--card-background)",
+                  backgroundColor: "white",
+                  borderRadius: "8px",
                   border: "1px solid var(--border-color)",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
                 }}
+                itemStyle={{ fontSize: "0.9rem" }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ paddingTop: "20px" }} />
+
               <Line
                 type="monotone"
                 dataKey="Flexion"
-                stroke="#e94560"
+                stroke="#f97316"
                 strokeWidth={2}
                 dot={false}
+                // activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
                 dataKey="Extension"
-                stroke="#53a8b6"
+                stroke="#3b82f6"
                 strokeWidth={2}
                 dot={false}
               />
               <Line
                 type="monotone"
                 dataKey="Radial"
-                stroke="#82ca9d"
+                stroke="#10b981"
                 strokeWidth={2}
                 dot={false}
               />
               <Line
                 type="monotone"
                 dataKey="Ulnar"
-                stroke="#fbc531"
+                stroke="#f59e0b"
                 strokeWidth={2}
                 dot={false}
               />

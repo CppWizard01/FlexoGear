@@ -1,0 +1,117 @@
+/* src/components/LoadingScreen.css */
+
+.loading-screen {
+  position: fixed; /* Covers the entire viewport */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--app-background); /* Use your app's background color */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* Ensure it's on top of everything */
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem; /* Space between elements */
+}
+
+.loading-title {
+  font-size: 3rem; /* Large text for brand */
+  font-weight: 700;
+  color: var(--brand-primary); /* Use your brand blue */
+  letter-spacing: -0.05em;
+  margin-bottom: 0.5rem;
+  animation: fadeInScale 1s ease-out forwards; /* Simple animation */
+}
+
+.loading-subtitle {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  animation: fadeInScale 1.2s ease-out forwards;
+  animation-delay: 0.2s; /* Stagger animation */
+  opacity: 0; /* Start hidden */
+}
+
+.loading-text {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-top: 1rem;
+  animation: fadeInScale 1.4s ease-out forwards;
+  animation-delay: 0.4s; /* Stagger animation */
+  opacity: 0;
+}
+
+.loading-animation {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  background-color: var(--brand-accent); /* Use your new accent color */
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Keyframe Animations */
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.8;
+  }
+  40% {
+    transform: translateY(-15px);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* src/components/LoadingScreen.css */
+
+/* ... existing styles ... */
+
+.loading-title {
+  font-size: 3rem;
+  font-weight: 700;
+  
+  /* --- CHANGED COLOR --- */
+  /* Using the Orange accent we added earlier */
+  color: var(--brand-accent); 
+  
+  /* Alternatively, for a dark grey/black: */
+  /* color: var(--text-primary); */
+  
+  letter-spacing: -0.05em;
+  margin-bottom: 0.5rem;
+  animation: fadeInScale 1s ease-out forwards;
+}
+
+/* ... rest of existing styles ... */

@@ -654,3 +654,117 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+
+/* In PatientDashboard.css */
+
+/* Update the Logout Button */
+.logout-button {
+  background-color: var(--bg-warm); /* Pale Peach */
+  color: var(--brand-accent);       /* Orange Text */
+  border: 1px solid var(--brand-accent-light);
+  /* ... keep padding/radius ... */
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  background-color: #ffedd5; /* Slightly darker peach hover */
+  border-color: var(--brand-accent);
+  box-shadow: 0 2px 5px rgba(249, 115, 22, 0.15);
+}
+
+/* In PatientDashboard.css */
+
+/* State: Calibrating (Warm & Noticeable) */
+.status-calibrating {
+  background-color: var(--bg-warm); /* Pale Peach */
+  border-color: var(--brand-accent-light);
+}
+.status-calibrating .status-icon {
+  color: var(--brand-accent); /* Orange Icon */
+}
+.status-calibrating .status-text h4 {
+  color: #c2410c; /* Darker Orange for text readability */
+}
+.status-action-btn.calibrate-btn {
+  background-color: var(--brand-accent); /* Vibrant Orange Button */
+  color: white;
+}
+.status-action-btn.calibrate-btn:hover {
+  background-color: #ea580c; /* Darker Orange Hover */
+}
+
+/* In PatientDashboard.css */
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* --- NEW: "Sunset" Gradient (Blue to Peach) --- */
+  background: linear-gradient(
+    90deg, 
+    var(--brand-primary) 0%, 
+    var(--brand-secondary) 50%, 
+    var(--brand-accent) 100%
+  );
+  
+  /* Optional: Keep the stripes if you like them, 
+     or remove this block for a smooth gradient */
+  background-size: 200% 100%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Animate the gradient flow */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Update text color to match the warm tone */
+.progress-bar-text {
+  /* ... keep positioning ... */
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  font-weight: 700;
+  
+  color: var(--text-primary); /* Dark text sits better on light bars */
+  /* OR if the bar is dark: color: white; */
+  z-index: 2;
+}
+
+/* src/pages/PatientDashboard.css */
+
+.chart-container {
+  background-color: white; /* Distinct background */
+  border-radius: 16px; /* Smoother, larger corners */
+  padding: 2rem; /* MORE padding to push content inside */
+  
+  /* Stronger definition */
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+              0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Ensure it doesn't overflow vertically */
+  height: auto;
+  min-height: 350px;
+  margin-bottom: 2rem;
+}
+
+/* Add some space below the title */
+.chart-container strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  display: block;
+}

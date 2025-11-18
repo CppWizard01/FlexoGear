@@ -1,10 +1,10 @@
 // src/pages/LoginPage.js
-// (UPDATED - Logic simplified)
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Keep navigate for helper links
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+import React, { useState, useEffect } from "react";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./LoginPage.css";
 
 const mascotPath = "/assets/mascot.svg";
@@ -12,10 +12,22 @@ const mascotPath = "/assets/mascot.svg";
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Toggle State
+  const [selectedRole, setSelectedRole] = useState("patient");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate(); // Still useful for forgot/signup links
+  // --- NEW: Check for errors passed from a previous failed attempt ---
+  useEffect(() => {
+    const storedError = sessionStorage.getItem("loginError");
+    if (storedError) {
+      setError(storedError);
+      sessionStorage.removeItem("loginError"); // Clear it so it doesn't stay forever
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,17 +35,48 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      // Step 1: Just sign the user in.
-      await signInWithEmailAndPassword(auth, email, password);
+      // 1. Attempt to Sign In
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
 
-      // Step 2: That's it!
-      // Your main App.js component will now detect the
-      // 'currentUser' change, fetch their role, and
-      // automatically navigate them to the correct dashboard.
+      // 2. Check Firestore for the Role
+      const userDocRef = doc(db, "users01", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const actualRole = userData.role ? userData.role.toLowerCase() : "";
+
+        // 3. STRICT CHECK: Role Mismatch
+        if (actualRole !== selectedRole) {
+          // Save the error so it survives the page reload
+          sessionStorage.setItem(
+            "loginError",
+            "Invalid credentials, try again"
+          );
+
+          // Force Sign Out
+          await signOut(auth);
+
+          // We don't need to setLoading(false) here because the app will
+          // reload the login page and pick up the error from sessionStorage.
+          return;
+        }
+
+        // If role matches, do nothing. App.js handles the redirect.
+      } else {
+        // Edge Case: Auth exists but no DB record
+        sessionStorage.setItem("loginError", "Invalid credentials, try again");
+        await signOut(auth);
+      }
     } catch (firebaseError) {
-      console.error("Firebase login error:", firebaseError);
-      setError("Failed to log in. Please check your email and password.");
-    } finally {
+      console.error("Login error:", firebaseError);
+      // Standard wrong password/email error
+      setError("Invalid credentials, try again");
       setLoading(false);
     }
   };
@@ -51,16 +94,22 @@ function LoginPage() {
         <h1 className="login-title">FlexoGear</h1>
         <p className="login-subtitle">Wearable Wrist Rehabilitation</p>
 
-        {/* NOTE: This role selector is now purely visual and
-          doesn't do anything, as the role is fetched from 
-          Firestore. You can remove it, or keep it for show.
-          I've removed the state logic from it.
-        */}
+        {/* Role Selector */}
         <div className="role-selector">
-          <button type="button" className="active">
+          <button
+            type="button"
+            className={selectedRole === "patient" ? "active" : ""}
+            onClick={() => setSelectedRole("patient")}
+          >
             Patient
           </button>
-          <button type="button">Doctor</button>
+          <button
+            type="button"
+            className={selectedRole === "doctor" ? "active" : ""}
+            onClick={() => setSelectedRole("doctor")}
+          >
+            Doctor
+          </button>
         </div>
 
         <form onSubmit={handleLogin} className="login-form">
@@ -72,41 +121,33 @@ function LoginPage() {
             required
             aria-label="Email Address"
           />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            aria-label="Password"
-          />
+
+          {/* Password Input with Eye Icon */}
+          <div className="password-input-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              aria-label="Password"
+            />
+            <span
+              className="password-toggle-icon"
+              onClick={() => setShowPassword(!showPassword)}
+              role="button"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
+
+          {/* Error Message */}
           {error && <p className="error-message">{error}</p>}
+
           <button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Verifying..." : "Login"}
           </button>
         </form>
-
-        <div className="login-helpers">
-          {/* Use navigate() for client-side routing */}
-          <a
-            href
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("/forgot-password");
-            }}
-          >
-            Forgot Password?
-          </a>
-          <a
-            href
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("/signup");
-            }}
-          >
-            New Doctor? <strong>Request Access</strong>
-          </a>
-        </div>
       </div>
     </div>
   );
