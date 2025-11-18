@@ -7,21 +7,10 @@
   min-height: 100vh;
 }
 
-.dashboard-header {
-  background-color: var(--card-background);
-  padding: 1.25rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-color);
-  position: relative;
-  overflow: hidden;
-}
-
 .dashboard-main {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Two Columns */
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
   padding: 2rem;
   max-width: 1400px;
@@ -29,51 +18,8 @@
   width: 100%;
 }
 
-/* --- HEADER ELEMENTS --- */
-.header-content {
-  position: relative;
-  z-index: 2;
-}
-
-.header-content h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-/* Subtle Watermark for Professional feel */
-.header-watermark {
-  position: absolute;
-  top: 50%;
-  left: -10px;
-  transform: translateY(-50%);
-  font-size: 5rem;
-  font-weight: 900;
-  color: #f1f5f9; /* Very subtle light gray */
-  z-index: 1;
-  pointer-events: none;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.logout-button {
-  background-color: white;
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  font-weight: 600;
-  z-index: 10;
-}
-
-.logout-button:hover {
-  background-color: #f1f5f9;
-  color: var(--status-error);
-  border-color: #fecaca;
-}
-
-/* --- CARDS (The Main Containers) --- */
-.live-session, 
+/* --- GLOBAL CARD STYLES --- */
+.live-session,
 .progress-tracking {
   background-color: var(--card-background);
   padding: 2rem;
@@ -85,6 +31,7 @@
   gap: 1.5rem;
 }
 
+/* Global h2 for card titles */
 h2 {
   font-size: 1.25rem;
   font-weight: 600;
@@ -94,88 +41,205 @@ h2 {
   margin-bottom: 0.5rem;
 }
 
-/* --- CONNECTION STATUS --- */
-.connection-controls {
+/* --- HEADER (Polished) --- */
+.dashboard-header {
+  background-color: white; /* Clean white */
+  padding: 1.25rem 2.5rem; /* A bit more padding */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color); /* Match card borders */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: none;
+}
+
+.header-content h1 {
+  font-size: 1.5rem; /* A bit smaller to feel more modern */
+  font-weight: 600; /* Match other titles */
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.logout-button {
+  background-color: #fef2f2; /* Light red */
+  color: #dc2626; /* Red */
+  border: 1px solid #fecaca;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+}
+
+/* --- SESSION STATUS (Refactored) --- */
+.session-status-wrapper {
+  width: 100%;
+}
+
+.status-box {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  background-color: #f8fafc;
-  padding: 0.75rem;
+  padding: 1.25rem 1.5rem;
   border-radius: 8px;
   border: 1px solid var(--border-color);
 }
 
-.connect-btn, .disconnect-btn {
+.status-icon {
+  font-size: 1.75rem; /* Icon size */
+  margin-right: 1.25rem;
+  flex-shrink: 0;
+}
+
+.status-text {
+  flex-grow: 1; /* This makes it take all available space */
+}
+
+.status-text h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
+}
+
+.status-text p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.status-action-btn {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   font-weight: 600;
   font-size: 0.9rem;
+  margin-left: 1rem;
+  white-space: nowrap;
 }
 
-.connect-btn {
+/* State: Disconnected */
+.status-disconnected {
+  background-color: #f8fafc;
+}
+.status-disconnected .status-icon {
+  color: var(--brand-secondary);
+}
+.status-action-btn.connect-btn {
   background-color: var(--brand-primary);
   color: white;
   box-shadow: 0 2px 4px rgba(14, 165, 233, 0.3);
 }
+.status-action-btn.connect-btn:hover {
+  background-color: #0284c7;
+}
 
-.connect-btn:hover { background-color: #0284c7; }
+/* State: Connecting */
+.status-connecting {
+  background-color: #f0f9ff; /* Light blue */
+  border-color: #bae6fd;
+}
+.status-connecting .status-text h4 {
+  color: #0369a1;
+}
 
-.disconnect-btn {
+/* State: Calibrating */
+.status-calibrating {
+  background-color: #fffbeb; /* Light yellow */
+  border-color: #fde68a;
+}
+.status-calibrating .status-icon {
+  color: #d97706; /* Amber */
+}
+.status-calibrating .status-text h4 {
+  color: #b45309;
+}
+.status-action-btn.calibrate-btn {
+  background-color: #f59e0b; /* Amber */
+  color: white;
+}
+.status-action-btn.calibrate-btn:hover {
+  background-color: #d97706;
+}
+
+/* State: Ready / In-Session */
+.status-ready {
+  background-color: #f0f9ff; /* Your original light blue */
+  border-color: #bae6fd;
+}
+.status-ready .status-icon {
+  color: var(--brand-primary);
+}
+.status-ready .status-text p {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.status-action-btn.disconnect-btn {
   background-color: white;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
 }
-.disconnect-btn:hover {
+.status-action-btn.disconnect-btn:hover {
   background-color: #fef2f2;
   color: var(--status-error);
   border-color: var(--status-error);
 }
 
-.connection-status-badge {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+/* Loading Spinner */
+.loading-spinner {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 3px solid #bae6fd;
+  border-top-color: var(--brand-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 1.25rem; /* Keep spacing consistent */
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* --- INSTRUCTION & GUIDANCE --- */
-.guidance-panel {
-  background-color: #f0f9ff; /* Very light blue bg */
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
-  padding: 2rem 1rem;
-  text-align: center;
-}
-
-.guidance-panel h3 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  color: var(--brand-secondary);
-  margin-bottom: 0.5rem;
-  font-weight: 700;
-}
-
-.instruction-text {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-/* --- PROGRESS BAR --- */
+/* --- PROGRESS BAR (Polished) --- */
 .progress-bar-container {
   width: 100%;
-  height: 16px;
+  height: 18px; /* Slightly taller */
   background-color: #e2e8f0;
   border-radius: 10px;
   overflow: hidden;
   position: relative;
+  border: 1px solid #cbd5e1; /* Add a subtle border */
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
   border-radius: 10px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* New Gradient and animated stripes */
+  background-color: var(--brand-primary);
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 40px 40px;
+  animation: progress-bar-stripes 2s linear infinite;
 }
 
 .progress-bar-text {
@@ -184,297 +248,404 @@ h2 {
   text-align: center;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text-primary); /* Dark text for readability if bar is light */
+  color: #0c4a6e; /* Darker blue for contrast on the bar */
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.4);
   z-index: 2;
-  text-shadow: 0 0 2px white;
 }
 
-/* --- GAUGES --- */
-.gauge-grid {
+@keyframes progress-bar-stripes {
+  from {
+    background-position: 40px 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* --- LIVE DATA (Refactored) --- */
+.live-data-wrapper {
+  width: 100%;
+}
+
+.live-data-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-.angle-gauge-container label {
-  display: block;
+  grid-template-columns: 1fr 1fr 1fr; /* 3-column layout */
+  gap: 1.5rem;
   text-align: center;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
 }
 
-.angle-gauge {
-  background-color: #e2e8f0; /* Light gray track */
+.live-data-metric {
+  background-color: #f8fafc; /* Light bg for each metric */
+  padding: 1.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-value {
+  font-size: 3.5rem; /* <-- THE HERO! */
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-value-suffix {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+.angle-gauge-container-new {
+  width: 100%;
+  margin-top: auto; /* Pushes gauges to the bottom */
+}
+
+.angle-gauge-new {
+  background-color: #e2e8f0;
   border-radius: 6px;
-  height: 24px;
+  height: 16px; /* A bit thinner */
   width: 100%;
   position: relative;
   overflow: hidden;
 }
 
-.gauge-bar {
-  /* Fresh Gradient: Blue to Green */
-  background: linear-gradient(90deg, var(--brand-primary), var(--status-success));
+.gauge-bar-new {
+  background: var(--brand-primary); /* Simpler, solid color */
   height: 100%;
   border-radius: 6px;
   transition: width 0.1s linear;
 }
 
-.gauge-center-line {
+.gauge-center-line-new {
   position: absolute;
   top: 0;
   left: 50%;
   width: 2px;
   height: 100%;
-  background-color: rgba(0,0,0,0.2);
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
-.live-angle-display {
-  font-size: 2.5rem;
-  font-weight: 700;
+/* --- MOTOR CONTROLS (Refactored) --- */
+.motor-controls-wrapper {
+  background-color: #f8fafc; /* Same as your old container */
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.motor-controls-wrapper h3 {
+  font-size: 1.1rem; /* Slightly larger title */
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
   color: var(--text-primary);
-  text-align: center;
-  margin-top: 0.5rem;
-  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
 }
 
-/* --- STATS GRID --- */
-.session-stats {
+.motor-controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem; /* Gap between manual and preset columns */
+}
+
+.manual-controls h4,
+.preset-controls h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.manual-controls p,
+.preset-controls p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.manual-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.angle-preset-group .angle-input {
+  width: 100%;
+}
+
+.gamepad-controls-new {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem; /* Smaller gap */
+  justify-items: center;
+  align-items: center;
+}
+
+.gamepad-btn-new {
+  font-size: 1.5rem; /* Icon size */
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  color: #334155; /* A softer gray */
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.gamepad-btn-new:hover:not(:disabled) {
+  background-color: #f8fafc;
+  color: var(--brand-primary);
+  border-color: var(--brand-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.gamepad-btn-new:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.gamepad-btn-new.gamepad-btn-center {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: white;
+  font-size: 1.75rem;
+}
+
+.gamepad-btn-new.gamepad-btn-center:hover:not(:disabled) {
+  background-color: #0284c7;
+}
+
+/* --- EXERCISE CONTROLS (Refactored) --- */
+.exercise-controls-wrapper {
+  /* This pushes it to the bottom of the flex column */
+  margin-top: auto;
+  padding-top: 1.5rem; /* Space above it */
+  border-top: 1px solid var(--border-color); /* Separator line */
+}
+
+.exercise-select-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.exercise-select-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* Base input styles for selects */
+.exercise-select,
+.angle-input {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.exercise-select {
+  width: 100%;
+}
+
+.control-buttons-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-top: 1rem;
 }
 
-.session-stats > div {
-  background-color: #f8fafc;
-  padding: 1.5rem;
-  border-radius: 8px;
-  text-align: center;
-  border: 1px solid var(--border-color);
-}
-
-.session-stats h4 {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-}
-
-.session-stats p {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--brand-secondary);
-  margin: 0;
-}
-
-/* --- MOTOR CONTROLS & INPUTS --- */
-.angle-set-controls {
-  background-color: #f8fafc;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.angle-set-controls h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.angle-set-controls p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-}
-
-/* Inputs */
-input[type="number"], 
-.angle-input,
-.exercise-select {
-  background-color: white;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  width: 100%;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-input[type="number"]:focus, 
-.angle-input:focus,
-.exercise-select:focus {
-  border-color: var(--brand-primary);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
-  outline: none;
-}
-
+/* Base Button Styles */
+.start-btn,
+.stop-btn,
+.emergency-stop-btn,
 .send-all-angles-btn {
-  margin-top: 1rem;
-  width: 100%;
-  background-color: white;
-  color: var(--brand-primary);
-  border: 1px solid var(--brand-primary);
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-.send-all-angles-btn:hover:not(:disabled) {
-  background-color: #f0f9ff;
-}
-
-/* --- EXERCISE CONTROLS --- */
-.exercise-controls {
-  margin-top: auto;
-}
-
-.control-buttons-row {
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-}
-
-#startExerciseBtn, #stopExerciseBtn {
-  flex: 1;
-  padding: 1rem;
-  font-size: 1rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem; /* Space between icon and text */
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   border-radius: 8px;
-  color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: none;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
 }
 
-#startExerciseBtn { background-color: var(--status-success); }
-#startExerciseBtn:hover { background-color: #059669; }
-
-#stopExerciseBtn { background-color: var(--status-error); }
-#stopExerciseBtn:hover { background-color: #dc2626; }
-
-#startExerciseBtn:disabled, 
-#stopExerciseBtn:disabled {
-  background-color: #cbd5e1;
+.start-btn:disabled,
+.stop-btn:disabled,
+.emergency-stop-btn:disabled,
+.send-all-angles-btn:disabled {
+  background-color: #cbd5e1; /* Gray */
+  color: #64748b;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-/* --- CHART & LIST --- */
+/* Specific Button Colors */
+.start-btn {
+  background-color: var(--status-success); /* Green */
+  color: white;
+}
+.start-btn:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.stop-btn {
+  background-color: #f43f5e; /* Rose */
+  color: white;
+}
+.stop-btn:hover:not(:disabled) {
+  background-color: #e11d48;
+}
+
+.emergency-stop-btn {
+  margin-top: 1rem;
+  background-color: var(--status-error); /* Red */
+  color: white;
+}
+.emergency-stop-btn:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.send-all-angles-btn {
+  margin-top: 1rem;
+  background-color: white;
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-primary);
+}
+.send-all-angles-btn:hover:not(:disabled) {
+  background-color: #f0f9ff;
+}
+
+/* --- PROGRESS TRACKER COLUMN --- */
+.progress-tracking h2 {
+  margin-bottom: 0.5rem;
+}
+
+/* CHART STYLES */
 .chart-container {
   background-color: white;
   border-radius: 8px;
-  padding: 1rem;
+  padding: 1.5rem;
   border: 1px solid var(--border-color);
-  min-height: 300px;
+  margin-bottom: 1.5rem; /* Space between chart and list */
+}
+
+.chart-container strong {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* RECENT SESSIONS LIST */
+.session-summary h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
 }
 
 .session-list {
   list-style-type: none;
   padding: 0;
-  margin: 1rem 0 0 0;
-  max-height: 300px;
+  margin: 0;
+  max-height: 350px;
   overflow-y: auto;
+  
+  /* Adds fading at the top and bottom of the scroll */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
 }
 
 .session-list li {
   background-color: white;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   border-radius: 8px;
   margin-bottom: 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border: 1px solid var(--border-color);
-  border-left: 4px solid var(--brand-primary);
+  box-shadow: none;
+  transition: all 0.2s ease-in-out;
 }
 
 .session-list li:hover {
-  box-shadow: var(--shadow-sm);
-  transform: translateX(2px);
-  transition: transform 0.2s;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--brand-primary);
+}
+
+.session-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .session-date {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 0.15rem;
 }
 
 .session-exercise {
   font-weight: 600;
+  font-size: 1rem;
   color: var(--text-primary);
 }
 
 .session-reps {
-  font-size: 0.85rem;
-  font-weight: 700;
-  background-color: #f1f5f9;
-  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background-color: #eef2ff; /* Light indigo */
+  color: #4338ca; /* Indigo */
+  padding: 0.3rem 0.75rem;
   border-radius: 20px;
-  color: var(--text-primary);
-}
-
-/* LiveSession.css additions/modifications */
-
-.gamepad-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 20px; /* Increased gap */
-  justify-items: center; /* Center items horizontally */
-  align-items: center; /* Center items vertically */
-  max-width: 300px; /* Set a max width for the remote */
-  margin: 20px auto; /* Center the entire block and add some margin */
-  padding: 20px;
-  background-color: #f0f0f0; /* Light background for the remote body */
-  border-radius: 15px; /* Rounded corners for the remote body */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
-}
-
-.gamepad-btn {
-  font-size: 2.5em; /* Significantly larger font for symbols */
-  padding: 15px 20px; /* Larger padding */
-  width: 70px; /* Fixed width */
-  height: 70px; /* Fixed height */
-  display: flex; /* Use flex to center symbol inside button */
-  justify-content: center;
-  align-items: center;
-  background-color: #5a7d9a; /* Button color */
-  color: white; /* Symbol color */
-  border: none;
-  border-radius: 50%; /* Make buttons circular */
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Button shadow */
-}
-
-.gamepad-btn:hover:not(:disabled) {
-  background-color: #4a6a80; /* Darker on hover */
-  transform: translateY(-2px); /* Slight lift on hover */
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-}
-
-.gamepad-btn:active:not(:disabled) {
-  transform: translateY(1px); /* Press effect */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.gamepad-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* Specific styling for the center button if desired */
-.gamepad-controls button:nth-child(5) { /* The center button (2nd row, 2nd column) */
-    border-radius: 50%; /* Ensure it's circular */
-    background-color: #4CAF50; /* A different color for the center button, for example */
-}
-
-.gamepad-controls button:nth-child(5):hover:not(:disabled) {
-    background-color: #45a049;
+  border: 1px solid #c7d2fe;
 }
 
 /* --- RESPONSIVE --- */
@@ -482,29 +653,4 @@ input[type="number"]:focus,
   .dashboard-main {
     grid-template-columns: 1fr;
   }
-  
-  .header-watermark {
-    display: none; /* Hide huge watermark on mobile */
-  }
-}
-
-/* Add this to your PatientDashboard.css */
-
-.logout-button {
-  background-color: #fee2e2; /* A light red/pink */
-  color: #dc2626;            /* A strong red text color for contrast */
-  border: 1px solid #fecaca; /* A light red border */
-  
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  
-  /* This makes the color change smooth */
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.logout-button:hover {
-  background-color: #fecaca; /* A slightly darker red */
-  color: #b91c1c;            /* A darker red text */
 }

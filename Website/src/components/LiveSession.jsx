@@ -1,4 +1,4 @@
-// Updated LiveSession.js with Gamepad Logic & Calibration Fix
+// Updated LiveSession.js (Fully Refactored)
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -10,6 +10,12 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
+
+// Import all the new child components
+import SessionStatus from "./SessionStatus";
+import LiveDataDisplay from "./LiveDataDisplay";
+import MotorControls from "./MotorControls";
+import ExerciseControls from "./ExerciseControls"; // <-- 1. ADDED THIS IMPORT
 
 // --- BLE CONSTANTS ---
 const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
@@ -57,7 +63,7 @@ const quaternionToEuler = (q) => {
   let pitch;
 
   if (Math.abs(sinp) >= 1) {
-    pitch = Math.sign(sinp) * Math.PI / 2;
+    pitch = (Math.sign(sinp) * Math.PI) / 2;
   } else {
     pitch = Math.asin(sinp);
   }
@@ -68,11 +74,10 @@ const quaternionToEuler = (q) => {
   const yaw = Math.atan2(siny_cosp, cosy_cosp);
 
   return {
-    pitch: -pitch * 180 / Math.PI,
-    yaw: yaw * 180 / Math.PI,
+    pitch: (-pitch * 180) / Math.PI,
+    yaw: (yaw * 180) / Math.PI,
   };
 };
-
 
 function LiveSession() {
   const [connectionStatus, setConnectionStatus] = useState("Disconnected");
@@ -238,7 +243,6 @@ function LiveSession() {
     });
   };
 
-  // --- EFFECT for IMU-based Rep Counting (Manual Mode) ---
   // --- EFFECT for IMU-based Rep Counting (Manual Mode ONLY) ---
   useEffect(() => {
     // This hook now ONLY runs in manual mode
@@ -305,6 +309,7 @@ function LiveSession() {
     selectedPrescription,
     currentStepIndex,
   ]);
+
   // --- NEW EFFECT for Max Value Recording (Runs in ALL modes) ---
   useEffect(() => {
     // Only run if the session is active and device is calibrated
@@ -319,6 +324,7 @@ function LiveSession() {
       uln: Math.max(prev.uln, yaw),
     }));
   }, [liveAngles, isSessionActive, isCalibrated]);
+
   // --- NEW EFFECT for Automation Loop (Data-Driven AND Fixed) ---
   useEffect(() => {
     if (
@@ -482,71 +488,15 @@ function LiveSession() {
     <section className="live-session">
       <h2>Live Session</h2>
 
-      {/* CONNECTION PANEL */}
-      <div className="connection-controls">
-        {connectionStatus === "Disconnected" ? (
-          <button onClick={handleConnect} className="connect-btn">
-            Connect Device
-          </button>
-        ) : (
-          <button onClick={handleDisconnect} className="disconnect-btn">
-            Disconnect
-          </button>
-        )}
-
-        <div className="connection-status-badge">
-          Status:{" "}
-          <span
-            style={{
-              color:
-                connectionStatus === "Connected"
-                  ? "var(--status-success)"
-                  : "inherit",
-            }}
-          >
-            {connectionStatus}
-          </span>
-        </div>
-      </div>
-
-      {/* CALIBRATION PANEL */}
-      {isCalibrating && connectionStatus === "Connected" && (
-        <div
-          style={{
-            padding: "1rem",
-            background: "#fff7ed",
-            border: "1px solid #fdba74",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}
-        >
-          <h4 style={{ color: "#c2410c", marginBottom: "0.5rem" }}>
-            Calibration Required
-          </h4>
-          <p
-            style={{
-              fontSize: "0.9rem",
-              marginBottom: "1rem",
-              color: "#9a3412",
-            }}
-          >
-            Hold your hand completely straight and still.
-          </p>
-          <button
-            onClick={handleCalibrate}
-            className="connect-btn"
-            style={{ background: "#f97316", width: "100%" }}
-          >
-            Set Zero Position
-          </button>
-        </div>
-      )}
-
-      {/* INSTRUCTION PANEL */}
-      <div className="guidance-panel">
-        <h3>Current Instruction</h3>
-        <p className="instruction-text">{currentStepText}</p>
-      </div>
+      {/* --- SESSION STATUS (Refactored) --- */}
+      <SessionStatus
+        connectionStatus={connectionStatus}
+        isCalibrating={isCalibrating}
+        currentStepText={currentStepText}
+        handleConnect={handleConnect}
+        handleDisconnect={handleDisconnect}
+        handleCalibrate={handleCalibrate}
+      />
 
       {/* PROGRESS BAR */}
       <div className="progress-bar-container">
@@ -559,201 +509,49 @@ function LiveSession() {
         </div>
       </div>
 
-      {/* GAUGES */}
-      <div className="gauge-grid">
-        <div className="angle-gauge-container">
-          <label>Flexion / Extension</label>
-          <div className="angle-gauge">
-            <div className="gauge-bar" style={{ width: `${pitchPct}%` }}></div>
-            <div className="gauge-center-line"></div>
-          </div>
-          <div className="live-angle-display">
-            {Math.round(liveAngles.pitch)}°
-          </div>
-        </div>
+      {/* --- LIVE DATA (Refactored) --- */}
+      <LiveDataDisplay
+        liveAngles={liveAngles}
+        pitchPct={pitchPct}
+        yawPct={yawPct}
+        currentSet={currentSet}
+        targetSets={selectedPrescription?.targetSets}
+      />
 
-        <div className="angle-gauge-container">
-          <label>Ulnar / Radial</label>
-          <div className="angle-gauge">
-            <div className="gauge-bar" style={{ width: `${yawPct}%` }}></div>
-            <div className="gauge-center-line"></div>
-          </div>
-          <div className="live-angle-display">
-            {Math.round(liveAngles.yaw)}°
-          </div>
-        </div>
-      </div>
+      {/* --- MOTOR CONTROLS (Refactored) --- */}
+      <MotorControls
+        anglePreset1={anglePreset1}
+        setAnglePreset1={setAnglePreset1}
+        anglePreset2={anglePreset2}
+        setAnglePreset2={setAnglePreset2}
+        anglePreset3={anglePreset3}
+        setAnglePreset3={setAnglePreset3}
+        onSendManual={handleSendAllAngles}
+        onSendPreset={sendMotorCommand} // Pass the function directly
+        isConnected={connectionStatus === "Connected"}
+      />
 
-      {/* STATS */}
-      <div className="session-stats">
-        {/* We removed the old "Reps" counter */}
-        <div>
-          <h4>Repetitions</h4>
-          <p>
-            {currentSet} / {selectedPrescription?.targetSets || "-"}
-          </p>
-        </div>
-      </div>
-
-      {/* MOTOR CONTROLS */}
-      <div className="angle-set-controls">
-        <h3>Motor Assistance (Manual)</h3>
-        <p>Manually set angles for the exosuit motors.</p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: "1rem",
-          }}
-        >
-          <div className="angle-preset-group">
-            <label>Motor 1</label>
-            <input
-              type="number"
-              className="angle-input"
-              value={anglePreset1}
-              onChange={(e) => setAnglePreset1(e.target.value)}
-            />
-          </div>
-          <div className="angle-preset-group">
-            <label>Motor 2</label>
-            <input
-              type="number"
-              className="angle-input"
-              value={anglePreset2}
-              onChange={(e) => setAnglePreset2(e.target.value)}
-            />
-          </div>
-          <div className="angle-preset-group">
-            <label>Motor 3</label>
-            <input
-              type="number"
-              className="angle-input"
-              value={anglePreset3}
-              onChange={(e) => setAnglePreset3(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <button
-          className="send-all-angles-btn"
-          onClick={handleSendAllAngles}
-          disabled={connectionStatus !== "Connected"}
-        >
-          Send Motor Commands
-        </button>
-
-        {/* --- NEW GAMEPAD SECTION --- */}
-        <h3 style={{ marginTop: "1.5rem", marginBottom: "0.5rem" }}>
-          Motor Presets (Gamepad)
-        </h3>
-        <div className="gamepad-controls">
-          {/* Row 1 */}
-          <div /> {/* Empty grid cell */}
-          <button
-            className="gamepad-btn"
-            onClick={() => sendMotorCommand(MOTOR_POS_TOP)}
-            disabled={connectionStatus !== "Connected"}
-          >
-            ▲
-          </button>
-          <div /> {/* Empty grid cell */}
-          {/* Row 2 */}
-          <button
-            className="gamepad-btn"
-            onClick={() => sendMotorCommand(MOTOR_POS_LEFT)}
-            disabled={connectionStatus !== "Connected"}
-          >
-            ◄
-          </button>
-          <button
-            className="gamepad-btn"
-            onClick={() => sendMotorCommand(MOTOR_POS_CENTER)}
-            disabled={connectionStatus !== "Connected"}
-          >
-            ●
-          </button>
-          <button
-            className="gamepad-btn"
-            onClick={() => sendMotorCommand(MOTOR_POS_RIGHT)}
-            disabled={connectionStatus !== "Connected"}
-          >
-            ►
-          </button>
-          {/* Row 3 */}
-          <div /> {/* Empty grid cell */}
-          <button
-            className="gamepad-btn"
-            onClick={() => sendMotorCommand(MOTOR_POS_BOTTOM)}
-            disabled={connectionStatus !== "Connected"}
-          >
-            ▼
-          </button>
-          <div /> {/* Empty grid cell */}
-        </div>
-        {/* --- END NEW GAMEPAD SECTION --- */}
-      </div>
-
-      {/* EXERCISE CONTROLS */}
-      <div className="exercise-controls">
-        <select
-          className="exercise-select"
-          value={selectedPrescription ? selectedPrescription.id : ""}
-          onChange={(e) => {
-            const p = prescriptions.find((pre) => pre.id === e.target.value);
-            setSelectedPrescription(p);
-            setIsSessionActive(false);
-            setIsAutomating(false);
-            clearTimeout(automationTimerRef.current);
-            setCurrentStepText("Ready to Start");
-            setRepsInSet(0);
-          }}
-          disabled={isSessionActive}
-        >
-          <option value="" disabled>
-            Select Prescribed Exercise
-          </option>
-          {prescriptions.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.exerciseName}
-            </option>
-          ))}
-        </select>
-        <div className="control-buttons-row">
-          <button
-            id="startExerciseBtn"
-            onClick={handleStartSession}
-            disabled={isSessionActive || !selectedPrescription || !isCalibrated}
-          >
-            Start Session
-          </button>
-          <button
-            id="stopExerciseBtn"
-            onClick={() => handleStopSession(false)}
-            disabled={!isSessionActive}
-          >
-            Stop Session
-          </button>
-          <button
-            id="emergencyStopBtn"
-            onClick={handleEmergencyStop}
-            disabled={connectionStatus !== "Connected"}
-            style={{
-              width: "100%",
-              marginTop: "1rem",
-              backgroundColor: "var(--status-error)",
-              color: "white",
-              borderColor: "var(--status-error)",
-              padding: "1rem",
-              fontSize: "1rem",
-              borderRadius: "8px",
-            }}
-          >
-            EMERGENCY STOP (Motors to Center)
-          </button>
-        </div>
-      </div>
+      {/* --- 2. REPLACED THIS ENTIRE BLOCK --- */}
+      <ExerciseControls
+        prescriptions={prescriptions}
+        selectedPrescription={selectedPrescription}
+        onSelectChange={(e) => {
+          const p = prescriptions.find((pre) => pre.id === e.target.value);
+          setSelectedPrescription(p);
+          setIsSessionActive(false);
+          setIsAutomating(false);
+          clearTimeout(automationTimerRef.current);
+          setCurrentStepText("Ready to Start");
+          setRepsInSet(0);
+        }}
+        isSessionActive={isSessionActive}
+        isCalibrated={isCalibrated}
+        onStart={handleStartSession}
+        onStop={() => handleStopSession(false)}
+        onEmergencyStop={handleEmergencyStop}
+        isConnected={connectionStatus === "Connected"}
+      />
+      {/* --- END OF REPLACEMENT --- */}
     </section>
   );
 }

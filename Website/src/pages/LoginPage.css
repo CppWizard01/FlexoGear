@@ -1,4 +1,5 @@
 /* src/pages/LoginPage.css */
+/* (UPDATED - Using variables from index.css) */
 
 .login-page {
   display: flex;
@@ -6,13 +7,22 @@
   justify-content: center;
   min-height: 100vh;
   padding: 1rem;
+  
+  /* These waves are fine as they are */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2386EFAC' fill-opacity='0.4' d='M0,224L48,208C96,192,192,160,288,170.7C384,181,480,235,576,250.7C672,267,768,245,864,208C960,171,1056,117,1152,112C1248,107,1344,149,1392,170.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2360A5FA' fill-opacity='0.4' d='M0,160L48,181.3C96,203,192,245,288,256C384,267,480,245,576,208C672,171,768,117,864,112C960,107,1056,149,1152,165.3C1248,181,1344,171,1392,165.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  
+  background-position: bottom, bottom;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
 }
 
 .login-container {
   background-color: var(--card-background);
   padding: 2.5rem 3rem;
   border-radius: 1rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   text-align: center;
   max-width: 400px;
   width: 100%;
@@ -20,7 +30,7 @@
 }
 
 .login-title {
-  color: var(--accent-cyan);
+  color: var(--brand-primary); /* CHANGED from --accent-cyan */
   margin-bottom: 0.5rem;
   font-size: 2rem;
   font-weight: 700;
@@ -28,19 +38,52 @@
 
 .login-subtitle {
   color: var(--text-secondary);
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
   font-size: 1rem;
+}
+
+/* Role Selector Styles */
+.role-selector {
+  display: flex;
+  background-color: var(--app-background); /* CHANGED from #EBF5FF */
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color); /* CHANGED from #BEE3FD */
+  width: 100%;
+}
+
+.role-selector button {
+  flex: 1;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 0.4rem;
+  background-color: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Since the role state is removed, this 'active' class
+  won't be dynamic, but I'll leave the style.
+  You can make the "Patient" button active by default.
+*/
+.role-selector button.active {
+  background-color: var(--card-background);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm); /* CHANGED from hardcoded shadow */
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-bottom: 2rem;
 }
 
 .login-form input {
-  background-color: var(--background-dark);
+  background-color: var(--app-background); /* CHANGED from --background-dark */
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   padding: 0.85rem;
@@ -51,7 +94,7 @@
 
 .login-form input:focus {
   outline: none;
-  border-color: var(--accent-blue);
+  border-color: var(--brand-secondary); /* CHANGED from --accent-blue */
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
@@ -61,13 +104,13 @@
   gap: 1rem;
 }
 
-/* Base button styles might be in index.css, these are overrides/specifics */
+/* Login Button Styles */
 .login-options button,
-.login-form button { /* Added .login-form button here */
-  background-color: var(--accent-blue);
-  color: white;
+.login-form button {
+  background-color: var(--brand-secondary); /* CHANGED from #60A5FA */
+  color: var(--text-on-accent); /* CHANGED from #000000 */
   font-size: 1rem;
-  border: none; /* Ensure buttons have no default border */
+  border: none;
   border-radius: 0.5rem;
   padding: 0.75rem 1.5rem;
   font-weight: 600;
@@ -76,33 +119,67 @@
 }
 
 .login-options button:hover,
-.login-form button:hover { /* Added .login-form button here */
-  background-color: #60A5FA; /* A lighter blue */
+.login-form button:hover {
+  background-color: var(--brand-primary); /* CHANGED from #93C5FD */
+  color: var(--text-on-accent); /* CHANGED from #000000 */
   transform: scale(1.03);
 }
 
-.login-form button:disabled { /* Style for disabled login button */
-    background-color: var(--border-color);
-    cursor: not-allowed;
-    opacity: 0.6;
+.login-form button:disabled {
+  background-color: var(--border-color);
+  color: var(--text-secondary); /* CHANGED */
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-/* Make sure error message style exists if used in LoginPage.jsx */
 .error-message {
-  color: var(--accent-red);
+  color: var(--status-error); /* CHANGED from --accent-red */
   font-size: 0.9rem;
-  margin-top: -0.5rem; /* Adjust spacing */
+  margin-top: -0.5rem;
   margin-bottom: 1rem;
 }
 
-/* Mascot styles if LoginMascot is used */
+/* Helper Link Styles */
+.login-helpers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.login-helpers a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.login-helpers a:hover {
+  color: var(--brand-secondary); /* CHANGED from --accent-blue */
+  text-decoration: underline;
+}
+
+.login-helpers a strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Mascot styles */
 .login-mascot {
-  margin-bottom: 1.5rem;
+  height: 80px;
+  width: 80px;
+  margin: 0 auto 1rem;
   animation: float 6s ease-in-out infinite;
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }

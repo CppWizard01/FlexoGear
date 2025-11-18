@@ -1,3 +1,5 @@
+// Updated ProgressTracker.js
+
 import React, { useState, useEffect } from "react";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { auth, db } from "../firebase";
@@ -154,19 +156,26 @@ function ProgressTracker({ patientId }) {
           <ul className="session-list">
             {sessionHistory.length > 0 ? (
               [...sessionHistory].reverse().map((session) => (
+                // --- THIS IS THE UPDATED BLOCK ---
                 <li key={session.id}>
-                  <span className="session-date">
-                    {session.timestamp?.seconds
-                      ? new Date(
-                          session.timestamp.seconds * 1000
-                        ).toLocaleDateString()
-                      : "N/A"}
-                  </span>
-                  <span className="session-exercise">
-                    {session.exerciseName}
-                  </span>
+                  <div className="session-info">
+                    <span className="session-date">
+                      {session.timestamp?.seconds
+                        ? new Date(
+                            session.timestamp.seconds * 1000
+                          ).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "N/A"}
+                    </span>
+                    <span className="session-exercise">
+                      {session.exerciseName}
+                    </span>
+                  </div>
                   <span className="session-reps">{session.reps} Reps</span>
                 </li>
+                // --- END OF UPDATED BLOCK ---
               ))
             ) : (
               <p>No session data found.</p>
