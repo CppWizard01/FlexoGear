@@ -74,7 +74,7 @@ const quaternionToEuler = (q) => {
   const yaw = Math.atan2(siny_cosp, cosy_cosp);
 
   return {
-    pitch: (-pitch * 180) / Math.PI,
+    pitch: (pitch * 180) / Math.PI,
     yaw: (yaw * 180) / Math.PI,
   };
 };
