@@ -11,7 +11,6 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
-<<<<<<< Updated upstream
 // Import child components
 import SessionStatus from "./SessionStatus";
 import LiveDataDisplay from "./LiveDataDisplay";
@@ -22,12 +21,6 @@ import ExerciseControls from "./ExerciseControls";
 const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
-=======
-// BLE Constants (Matching your ESP32 definitions)
-const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"; // TX (ESP32 to App - NOTIFY)
-const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9"; // RX (App to ESP32 - WRITE)
->>>>>>> Stashed changes
 
 // --- AUTOMATION CONSTANTS ---
 const MOTOR_POS_TOP = { a1: "0", a2: "180", a3: "180" };
@@ -36,8 +29,8 @@ const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" }; // Active/Ready State
 const MOTOR_POS_LEFT = { a1: "0", a2: "0", a3: "0" };
 const MOTOR_POS_RIGHT = { a1: "180", a2: "180", a3: "0" };
 
-// --- NEW: NO LOAD / RELAX STATE ---
-const MOTOR_POS_RELAX = { a1: "180", a2: "0", a3: "180" }; // Motors Loose
+// --- RELAX STATE (No Load) ---
+const MOTOR_POS_RELAX = { a1: "180", a2: "0", a3: "180" };
 
 const MOTOR_COMMAND_MAP = {
   TOP: MOTOR_POS_TOP,
@@ -75,7 +68,7 @@ const quaternionToEuler = (q) => {
   const cosy_cosp = 1 - 2 * (j * j + k * k);
   const yaw = Math.atan2(siny_cosp, cosy_cosp);
   return {
-    pitch: (pitch * 180) / Math.PI,
+    pitch: (-pitch * 180) / Math.PI,
     yaw: (yaw * 180) / Math.PI,
   };
 };
@@ -100,7 +93,6 @@ function LiveSession() {
     uln: 0,
   });
 
-<<<<<<< Updated upstream
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [isCalibrated, setIsCalibrated] = useState(false);
 
@@ -122,17 +114,6 @@ function LiveSession() {
   // Save Lock to prevent duplicate entries
   const isSavingRef = useRef(false);
 
-=======
-  // Ref to store the "write" characteristic
-  const commandCharacteristicRef = useRef(null);
-
-  // State to hold the values of the three text boxes
-  const [anglePreset1, setAnglePreset1] = useState("0");
-  const [anglePreset2, setAnglePreset2] = useState("0");
-  const [anglePreset3, setAnglePreset3] = useState("0");
-
-  // --- Fetch Prescriptions (Real-Time) ---
->>>>>>> Stashed changes
   useEffect(() => {
     let unsubscribe = () => {};
     const user = auth.currentUser;
@@ -177,30 +158,14 @@ function LiveSession() {
       device.addEventListener("gattserverdisconnected", onDisconnected);
       const server = await device.gatt.connect();
       const service = await server.getPrimaryService(SERVICE_UUID);
-<<<<<<< Updated upstream
       const char = await service.getCharacteristic(CHARACTERISTIC_UUID);
       commandCharacteristicRef.current = await service.getCharacteristic(
         COMMAND_CHARACTERISTIC_UUID
       );
 
-=======
-
-      // 1. Get the NOTIFY characteristic (for receiving angle data)
-      const characteristic = await service.getCharacteristic(
-        CHARACTERISTIC_UUID
-      );
-
-      // 2. Get the WRITE characteristic (for sending angle commands)
-      const commandCharacteristic = await service.getCharacteristic(
-        COMMAND_CHARACTERISTIC_UUID
-      );
-      commandCharacteristicRef.current = commandCharacteristic; // Store it in the ref
-
->>>>>>> Stashed changes
       setConnectionStatus("Connected");
 
-      // --- UPDATE: Move to Center (90,90,90) on Connect ---
-      // We use the helper but need to ensure ref is set (it is line above)
+      // --- MOVE TO 90-90-90 ON CONNECT ---
       await sendMotorCommand(MOTOR_POS_CENTER);
 
       await char.startNotifications();
@@ -230,11 +195,6 @@ function LiveSession() {
     } catch (error) {
       console.error("Connection failed:", error);
       setConnectionStatus("Disconnected");
-<<<<<<< Updated upstream
-=======
-      commandCharacteristicRef.current = null; // Clear ref on failure
-      alert("Failed to connect. Make sure the device is on and in range.");
->>>>>>> Stashed changes
     }
   };
 
@@ -251,7 +211,7 @@ function LiveSession() {
 
   const handleDisconnect = async () => {
     if (deviceRef.current?.gatt?.connected) {
-      // --- UPDATE: Relax motors (180,0,180) BEFORE disconnecting ---
+      // --- RELAX MOTORS (180,0,180) BEFORE DISCONNECT ---
       await sendMotorCommand(MOTOR_POS_RELAX);
       deviceRef.current.gatt.disconnect();
     } else {
@@ -356,7 +316,6 @@ function LiveSession() {
     )
       return;
 
-<<<<<<< Updated upstream
     const sequence = selectedPrescription.automationSequence;
     const commandKey = sequence[automationStep];
     const command = MOTOR_COMMAND_MAP[commandKey];
@@ -364,20 +323,6 @@ function LiveSession() {
     if (!command) {
       setIsAutomating(false);
       return;
-=======
-      if (newRepCount >= selectedPrescription.targetReps) {
-        const newSetCount = currentSet + 1;
-        if (newSetCount > selectedPrescription.targetSets) {
-          handleStopSession(true); // Auto-stop and save
-        } else {
-          setCurrentSet(newSetCount);
-          setRepsInSet(0);
-          setCurrentStepText(`Get Ready for Set ${newSetCount}`); // Intermediate message
-        }
-      } else {
-        setRepsInSet(newRepCount);
-      }
->>>>>>> Stashed changes
     }
 
     sendMotorCommand(command);
@@ -430,7 +375,7 @@ function LiveSession() {
     repPhaseRef.current = "start";
     setIsSessionActive(true);
 
-    // --- UPDATE: Force Center (90,90,90) on Start ---
+    // --- FORCE 90-90-90 ON START ---
     sendMotorCommand(MOTOR_POS_CENTER);
 
     if (
@@ -444,7 +389,6 @@ function LiveSession() {
     }
   };
 
-<<<<<<< Updated upstream
   const handleStopSession = async (
     autoCompleted = false,
     isEmergency = false
@@ -457,33 +401,17 @@ function LiveSession() {
     setIsAutomating(false);
     clearTimeout(automationTimerRef.current);
 
-    // --- UPDATE: Stop Logic ---
+    // --- RELAX MOTORS ON STOP (180-0-180) ---
+    sendMotorCommand(MOTOR_POS_RELAX);
+
     if (autoCompleted) {
       setExerciseProgress(100);
       setCurrentStepText("Session Complete!");
-      // Even on completion, we probably want to relax the hand?
-      // Let's assume we want to relax it to 180,0,180
-      sendMotorCommand(MOTOR_POS_RELAX);
     } else if (isEmergency) {
       setCurrentStepText("EMERGENCY STOP. Motors released.");
-      // Emergency: Relax immediately
-      sendMotorCommand(MOTOR_POS_RELAX);
     } else {
       setCurrentStepText("Session Stopped.");
-      // Manual Stop: Relax
-      sendMotorCommand(MOTOR_POS_RELAX);
     }
-=======
-  const handleStopSession = async (autoCompleted = false) => {
-    const wasActive = isSessionActive;
-    if (!wasActive && !autoCompleted) return; // Don't run if already stopped manually
-
-    setIsSessionActive(false); // Stop session state first
-    const finalStepText = autoCompleted
-      ? "Exercise Complete!"
-      : "Session Stopped";
-    setCurrentStepText(finalStepText);
->>>>>>> Stashed changes
 
     const totalCompletedReps =
       (currentSet - 1) * (selectedPrescription?.targetReps || 0) + repsInSet;
@@ -512,68 +440,17 @@ function LiveSession() {
               selectedPrescription.automationSequence.length > 0
             ),
           });
-<<<<<<< Updated upstream
           console.log("Session saved successfully (Single Write)");
         } catch (err) {
           console.error("Save failed", err);
           isSavingRef.current = false;
-=======
-          if (wasActive && !autoCompleted)
-            alert("Session stopped and saved!"); // Only alert on manual stop
-          else if (autoCompleted) alert("Exercise complete and saved!");
-        } catch (error) {
-          console.error("Error saving session: ", error);
-          alert("Failed to save session.");
->>>>>>> Stashed changes
         }
       }
     }
     setRepsInSet(0);
-<<<<<<< Updated upstream
-=======
-    setCurrentSet(1);
-    setExerciseProgress(0);
-    setCurrentStepIndex(0);
-  };
-
-  // --- Handler for sending all three angle presets at once ---
-  const handleSendAllAngles = async () => {
-    if (!commandCharacteristicRef.current) {
-      alert(
-        "Device is not connected or command characteristic could not be found."
-      );
-      return;
-    }
-
-    try {
-      const encoder = new TextEncoder();
-
-      // 1. Create the object
-      const commandObject = {
-        a1: anglePreset1, // Value from the first text box
-        a2: anglePreset2, // Value from the second text box
-        a3: anglePreset3, // Value from the third text box
-      };
-
-      // 2. Convert the object to a JSON string
-      // This will look like: {"a1":"45","a2":"0","a3":"-20"}
-      const commandString = JSON.stringify(commandObject);
-
-      // 3. Encode and send
-      const data = encoder.encode(commandString);
-      await commandCharacteristicRef.current.writeValue(data);
-
-      console.log(`Sent command: ${commandString}`);
-      alert(`Sent all angles: ${commandString}`);
-    } catch (error) {
-      console.error("Failed to send all angles command:", error);
-      alert("Failed to send command.");
-    }
->>>>>>> Stashed changes
   };
 
   const handleEmergencyStop = () => {
-    // This calls handleStopSession which now handles the MOTOR_POS_RELAX command
     handleStopSession(false, true);
   };
 
@@ -625,11 +502,10 @@ function LiveSession() {
         anglePreset3={anglePreset3}
         setAnglePreset3={setAnglePreset3}
         onSendManual={handleSendAllAngles}
-        onSendPreset={sendMotorCommand} // Pass the function directly
+        onSendPreset={sendMotorCommand}
         isConnected={connectionStatus === "Connected"}
       />
 
-<<<<<<< Updated upstream
       <ExerciseControls
         prescriptions={prescriptions}
         selectedPrescription={selectedPrescription}
@@ -650,105 +526,6 @@ function LiveSession() {
         onEmergencyStop={handleEmergencyStop}
         isConnected={connectionStatus === "Connected"}
       />
-=======
-      {/* --- Angle Set Controls (3 Inputs, 1 Button) --- */}
-      <div className="angle-set-controls">
-        <h3>Set Target Angles</h3>
-        <p>Enter target angles (in degrees) and send all at once.</p>
-
-        <div className="angle-preset-group">
-          <label htmlFor="angle1">Angle 1:</label>
-          <input
-            type="number"
-            id="angle1"
-            className="angle-input"
-            value={anglePreset1}
-            onChange={(e) => setAnglePreset1(e.target.value)}
-          />
-        </div>
-
-        <div className="angle-preset-group">
-          <label htmlFor="angle2">Angle 2:</label>
-          <input
-            type="number"
-            id="angle2"
-            className="angle-input"
-            value={anglePreset2}
-            onChange={(e) => setAnglePreset2(e.target.value)}
-          />
-        </div>
-
-        <div className="angle-preset-group">
-          <label htmlFor="angle3">Angle 3:</label>
-          <input
-            type="number"
-            id="angle3"
-            className="angle-input"
-            value={anglePreset3}
-            onChange={(e) => setAnglePreset3(e.target.value)}
-          />
-        </div>
-
-        {/* Single button to send all three */}
-        <button
-          className="send-all-angles-btn" // Added a class for styling
-          onClick={handleSendAllAngles}
-          disabled={connectionStatus !== "Connected"}
-        >
-          Send All Angles
-        </button>
-      </div>
-
-      <div className="exercise-controls">
-        <h3>Select Prescription:</h3>
-        <select
-          className="exercise-select"
-          value={selectedPrescription ? selectedPrescription.id : ""}
-          onChange={(e) => {
-            const prescriptionId = e.target.value;
-            const prescription = prescriptions.find(
-              (p) => p.id === prescriptionId
-            );
-            setSelectedPrescription(prescription);
-            if (isSessionActive) setIsSessionActive(false); // Stop active session if changing
-            setCurrentStepText("Ready to Start"); // Reset text
-            setRepsInSet(0);
-            setCurrentSet(1);
-            setExerciseProgress(0);
-            setCurrentStepIndex(0);
-            setMaxValues({ flex: 0, ext: 0, rad: 0, uln: 0 });
-          }}
-          disabled={isSessionActive}
-        >
-          <option value="" disabled>
-            Choose an exercise
-          </option>
-          {prescriptions.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.exerciseName}
-            </option>
-          ))}
-        </select>
-        <div>
-          <button
-            id="startExerciseBtn"
-            onClick={handleStartSession}
-            disabled={isSessionActive || !selectedPrescription}
-          >
-            Start
-          </button>
-          <button
-            id="stopExerciseBtn"
-            onClick={() => handleStopSession(false)} // false = manual stop
-            disabled={
-              !isSessionActive && currentStepText !== "Exercise Complete!"
-            }
-          >
-            Stop
-          </button>
-        </div>
-      </div>
->>>>>>> Stashed changes
     </section>
   );
 }
