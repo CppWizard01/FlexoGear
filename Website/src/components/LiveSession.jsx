@@ -22,22 +22,32 @@ const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
 
-// --- AUTOMATION CONSTANTS ---
+// --- AUTOMATION CONSTANTS (User Defined) ---
+const MOTOR_POS_TOP_LEFT = { a1: "0", a2: "0", a3: "180" };
 const MOTOR_POS_TOP = { a1: "0", a2: "180", a3: "180" };
-const MOTOR_POS_BOTTOM = { a1: "180", a2: "0", a3: "0" };
-const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" }; // Active/Ready State
-const MOTOR_POS_LEFT = { a1: "0", a2: "0", a3: "0" };
-const MOTOR_POS_RIGHT = { a1: "180", a2: "180", a3: "0" };
+const MOTOR_POS_TOP_RIGHT = { a1: "180", a2: "150", a3: "30" };
 
-// --- RELAX STATE (No Load) ---
-const MOTOR_POS_RELAX = { a1: "180", a2: "0", a3: "180" };
+const MOTOR_POS_LEFT = { a1: "180", a2: "180", a3: "0" };
+const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" };
+const MOTOR_POS_RIGHT = { a1: "0", a2: "0", a3: "60" };
+
+const MOTOR_POS_BOTTOM_LEFT = { a1: "180", a2: "180", a3: "0" };
+const MOTOR_POS_BOTTOM = { a1: "180", a2: "0", a3: "0" };
+const MOTOR_POS_BOTTOM_RIGHT = { a1: "60", a2: "0", a3: "0" };
+
+const MOTOR_POS_RELAX = { a1: "180", a2: "0", a3: "180" }; // No Load
 
 const MOTOR_COMMAND_MAP = {
+  TOP_LEFT: MOTOR_POS_TOP_LEFT,
   TOP: MOTOR_POS_TOP,
-  BOTTOM: MOTOR_POS_BOTTOM,
+  TOP_RIGHT: MOTOR_POS_TOP_RIGHT,
   LEFT: MOTOR_POS_LEFT,
-  RIGHT: MOTOR_POS_RIGHT,
   CENTER: MOTOR_POS_CENTER,
+  RIGHT: MOTOR_POS_RIGHT,
+  BOTTOM_LEFT: MOTOR_POS_BOTTOM_LEFT,
+  BOTTOM: MOTOR_POS_BOTTOM,
+  BOTTOM_RIGHT: MOTOR_POS_BOTTOM_RIGHT,
+  RELAX: MOTOR_POS_RELAX,
 };
 
 const AUTOMATION_DELAY_MS = 2000;
@@ -502,8 +512,21 @@ function LiveSession() {
         anglePreset3={anglePreset3}
         setAnglePreset3={setAnglePreset3}
         onSendManual={handleSendAllAngles}
-        onSendPreset={sendMotorCommand}
+        onSendPreset={sendMotorCommand} // Pass the function
         isConnected={connectionStatus === "Connected"}
+        // PASS THE POSITIONS HERE
+        positions={{
+          TOP_LEFT: MOTOR_POS_TOP_LEFT,
+          TOP: MOTOR_POS_TOP,
+          TOP_RIGHT: MOTOR_POS_TOP_RIGHT,
+          LEFT: MOTOR_POS_LEFT,
+          CENTER: MOTOR_POS_CENTER,
+          RIGHT: MOTOR_POS_RIGHT,
+          BOTTOM_LEFT: MOTOR_POS_BOTTOM_LEFT,
+          BOTTOM: MOTOR_POS_BOTTOM,
+          BOTTOM_RIGHT: MOTOR_POS_BOTTOM_RIGHT,
+          RELAX: MOTOR_POS_RELAX,
+        }}
       />
 
       <ExerciseControls

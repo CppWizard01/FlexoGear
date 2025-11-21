@@ -1,21 +1,7 @@
 // src/components/MotorControls.js
-// (Or wherever your LiveSession component is)
 
 import React from "react";
-import {
-  FaArrowUp,
-  FaArrowDown,
-  FaArrowLeft,
-  FaArrowRight,
-  FaDotCircle, // A better "center" icon
-} from "react-icons/fa";
-
-// Motor position constants (can be passed in or defined here)
-const MOTOR_POS_TOP = { a1: "0", a2: "180", a3: "180" };
-const MOTOR_POS_BOTTOM = { a1: "180", a2: "0", a3: "0" };
-const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" };
-const MOTOR_POS_LEFT = { a1: "0", a2: "0", a3: "0" };
-const MOTOR_POS_RIGHT = { a1: "180", a2: "180", a3: "0" };
+import { FaRegHandPaper } from "react-icons/fa";
 
 function MotorControls({
   anglePreset1,
@@ -25,14 +11,14 @@ function MotorControls({
   anglePreset3,
   setAnglePreset3,
   onSendManual,
-  onSendPreset, // This will be our sendMotorCommand
+  onSendPreset,
+  positions,
   isConnected,
 }) {
   return (
     <div className="motor-controls-wrapper">
       <h3>Motor Assistance</h3>
 
-      {/* This grid creates the 2-column layout */}
       <div className="motor-controls-grid">
         {/* --- COLUMN 1: MANUAL --- */}
         <div className="manual-controls">
@@ -40,7 +26,7 @@ function MotorControls({
           <p>Set specific angles for each motor.</p>
           <div className="manual-inputs-grid">
             <div className="angle-preset-group">
-              <label>Motor 1</label>
+              <label>M1</label>
               <input
                 type="number"
                 className="angle-input"
@@ -49,7 +35,7 @@ function MotorControls({
               />
             </div>
             <div className="angle-preset-group">
-              <label>Motor 2</label>
+              <label>M2</label>
               <input
                 type="number"
                 className="angle-input"
@@ -58,7 +44,7 @@ function MotorControls({
               />
             </div>
             <div className="angle-preset-group">
-              <label>Motor 3</label>
+              <label>M3</label>
               <input
                 type="number"
                 className="angle-input"
@@ -76,59 +62,84 @@ function MotorControls({
           </button>
         </div>
 
-        {/* --- COLUMN 2: PRESETS (GAMEPAD) --- */}
+        {/* --- COLUMN 2: PIE DIAL --- */}
         <div className="preset-controls">
           <h4>Quick Presets</h4>
-          <p>Use the gamepad for common positions.</p>
-          <div className="gamepad-controls-new">
-            {/* Row 1 */}
-            <div /> {/* Empty grid cell */}
-            <button
-              className="gamepad-btn-new"
-              onClick={() => onSendPreset(MOTOR_POS_TOP)}
-              disabled={!isConnected}
-              aria-label="Move Top"
-            >
-              <FaArrowUp />
-            </button>
-            <div /> {/* Empty grid cell */}
-            {/* Row 2 */}
-            <button
-              className="gamepad-btn-new"
-              onClick={() => onSendPreset(MOTOR_POS_LEFT)}
-              disabled={!isConnected}
-              aria-label="Move Left"
-            >
-              <FaArrowLeft />
-            </button>
-            <button
-              className="gamepad-btn-new gamepad-btn-center"
-              onClick={() => onSendPreset(MOTOR_POS_CENTER)}
-              disabled={!isConnected}
-              aria-label="Move to Center"
-            >
-              <FaDotCircle />
-            </button>
-            <button
-              className="gamepad-btn-new"
-              onClick={() => onSendPreset(MOTOR_POS_RIGHT)}
-              disabled={!isConnected}
-              aria-label="Move Right"
-            >
-              <FaArrowRight />
-            </button>
-            {/* Row 3 */}
-            <div /> {/* Empty grid cell */}
-            <button
-              className="gamepad-btn-new"
-              onClick={() => onSendPreset(MOTOR_POS_BOTTOM)}
-              disabled={!isConnected}
-              aria-label="Move Bottom"
-            >
-              <FaArrowDown />
-            </button>
-            <div /> {/* Empty grid cell */}
+          <p>8-Direction Control Dial</p>
+
+          <div className="circular-dial-container">
+            <div className="pie-dial">
+              {/* 8 Segments - No Icons, Just Clickable Areas */}
+              {/* Note: The order matches the rotation in CSS */}
+              <button
+                className="seg-btn seg-top"
+                onClick={() => onSendPreset(positions.TOP)}
+                disabled={!isConnected}
+                title="Top"
+              ></button>
+              <button
+                className="seg-btn seg-tr"
+                onClick={() => onSendPreset(positions.TOP_RIGHT)}
+                disabled={!isConnected}
+                title="Top Right"
+              ></button>
+              <button
+                className="seg-btn seg-right"
+                onClick={() => onSendPreset(positions.RIGHT)}
+                disabled={!isConnected}
+                title="Right"
+              ></button>
+              <button
+                className="seg-btn seg-br"
+                onClick={() => onSendPreset(positions.BOTTOM_RIGHT)}
+                disabled={!isConnected}
+                title="Bottom Right"
+              ></button>
+              <button
+                className="seg-btn seg-bottom"
+                onClick={() => onSendPreset(positions.BOTTOM)}
+                disabled={!isConnected}
+                title="Bottom"
+              ></button>
+              <button
+                className="seg-btn seg-bl"
+                onClick={() => onSendPreset(positions.BOTTOM_LEFT)}
+                disabled={!isConnected}
+                title="Bottom Left"
+              ></button>
+              <button
+                className="seg-btn seg-left"
+                onClick={() => onSendPreset(positions.LEFT)}
+                disabled={!isConnected}
+                title="Left"
+              ></button>
+              <button
+                className="seg-btn seg-tl"
+                onClick={() => onSendPreset(positions.TOP_LEFT)}
+                disabled={!isConnected}
+                title="Top Left"
+              ></button>
+
+              {/* Center Button (Orange Target) */}
+              <button
+                className="dial-center"
+                onClick={() => onSendPreset(positions.CENTER)}
+                disabled={!isConnected}
+                title="Center (90/90/90)"
+              >
+                <div className="center-dot"></div>
+              </button>
+            </div>
           </div>
+
+          {/* RELAX BUTTON */}
+          <button
+            className="relax-btn"
+            onClick={() => onSendPreset(positions.RELAX)}
+            disabled={!isConnected}
+          >
+            <FaRegHandPaper /> Relax (No Load)
+          </button>
         </div>
       </div>
     </div>

@@ -5,7 +5,6 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* Vibrant gradient background flowing from cool to warm */
   background: linear-gradient(180deg, #e0f2fe 0%, #f1f5f9 50%, #fef3e8 100%);
 }
 
@@ -32,9 +31,10 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
-/* Global h2 for card titles */
 h2 {
   font-size: 1.25rem;
   font-weight: 600;
@@ -48,14 +48,14 @@ h2 {
   margin-bottom: 0.5rem;
 }
 
-/* --- HEADER (Polished) --- */
+/* --- HEADER --- */
 .dashboard-header {
-  background-color: white; /* Clean white */
-  padding: 1.25rem 2.5rem; /* A bit more padding */
+  background-color: white;
+  padding: 1.25rem 2.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--border-color); /* Match card borders */
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -63,15 +63,15 @@ h2 {
 }
 
 .header-content h1 {
-  font-size: 1.5rem; /* A bit smaller to feel more modern */
-  font-weight: 600; /* Match other titles */
+  font-size: 1.5rem;
+  font-weight: 600;
   color: var(--text-primary);
   margin: 0;
 }
 
 .logout-button {
-  background-color: var(--bg-warm); /* Pale Peach */
-  color: var(--brand-accent);       /* Orange Text */
+  background-color: var(--bg-warm);
+  color: var(--brand-accent);
   border: 1px solid var(--brand-accent-light);
   padding: 0.6rem 1rem;
   border-radius: 6px;
@@ -82,12 +82,12 @@ h2 {
 }
 
 .logout-button:hover {
-  background-color: #ffedd5; /* Slightly darker peach hover */
+  background-color: #ffedd5;
   border-color: var(--brand-accent);
   box-shadow: 0 2px 5px rgba(249, 115, 22, 0.15);
 }
 
-/* --- SESSION STATUS (Refactored) --- */
+/* --- SESSION STATUS --- */
 .session-status-wrapper {
   width: 100%;
 }
@@ -101,13 +101,13 @@ h2 {
 }
 
 .status-icon {
-  font-size: 1.75rem; /* Icon size */
+  font-size: 1.75rem;
   margin-right: 1.25rem;
   flex-shrink: 0;
 }
 
 .status-text {
-  flex-grow: 1; /* This makes it take all available space */
+  flex-grow: 1;
 }
 
 .status-text h4 {
@@ -132,7 +132,7 @@ h2 {
   white-space: nowrap;
 }
 
-/* State: Disconnected */
+/* Status States */
 .status-disconnected {
   background-color: #f8fafc;
 }
@@ -148,37 +148,34 @@ h2 {
   background-color: #0284c7;
 }
 
-/* State: Connecting */
 .status-connecting {
-  background-color: #f0f9ff; /* Light blue */
+  background-color: #f0f9ff;
   border-color: #bae6fd;
 }
 .status-connecting .status-text h4 {
   color: #0369a1;
 }
 
-/* State: Calibrating */
 .status-calibrating {
-  background-color: var(--bg-warm); /* Pale Peach */
+  background-color: var(--bg-warm);
   border-color: var(--brand-accent-light);
 }
 .status-calibrating .status-icon {
-  color: var(--brand-accent); /* Orange Icon */
+  color: var(--brand-accent);
 }
 .status-calibrating .status-text h4 {
-  color: #c2410c; /* Darker Orange for text readability */
+  color: #c2410c;
 }
 .status-action-btn.calibrate-btn {
-  background-color: var(--brand-accent); /* Vibrant Orange Button */
+  background-color: var(--brand-accent);
   color: white;
 }
 .status-action-btn.calibrate-btn:hover {
-  background-color: #ea580c; /* Darker Orange Hover */
+  background-color: #ea580c;
 }
 
-/* State: Ready / In-Session */
 .status-ready {
-  background-color: #f0f9ff; /* Your original light blue */
+  background-color: #f0f9ff;
   border-color: #bae6fd;
 }
 .status-ready .status-icon {
@@ -200,7 +197,6 @@ h2 {
   border-color: var(--status-error);
 }
 
-/* Loading Spinner */
 .loading-spinner {
   width: 1.75rem;
   height: 1.75rem;
@@ -208,43 +204,32 @@ h2 {
   border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-right: 1.25rem; /* Keep spacing consistent */
+  margin-right: 1.25rem;
 }
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* --- PROGRESS BAR (Polished) --- */
+/* --- PROGRESS BAR --- */
 .progress-bar-container {
   width: 100%;
-  height: 18px; /* Slightly taller */
+  height: 18px;
   background-color: #e2e8f0;
   border-radius: 10px;
   overflow: hidden;
   position: relative;
-  border: 1px solid #cbd5e1; /* Add a subtle border */
+  border: 1px solid #cbd5e1;
 }
 
 .progress-bar-fill {
   height: 100%;
   border-radius: 10px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* "Sunset" Gradient (Blue to Peach) */
-  background: linear-gradient(
-    90deg, 
-    var(--brand-primary) 0%, 
-    var(--brand-secondary) 50%, 
-    var(--brand-accent) 100%
-  );
-  
+  background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-secondary) 50%, var(--brand-accent) 100%);
   background-size: 200% 100%;
   animation: gradient-shift 3s ease infinite;
 }
 
-/* Animate the gradient flow */
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -263,14 +248,14 @@ h2 {
   z-index: 2;
 }
 
-/* --- LIVE DATA (Refactored) --- */
+/* --- LIVE DATA --- */
 .live-data-wrapper {
   width: 100%;
 }
 
 .live-data-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr; /* 3-column layout */
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1.5rem;
   text-align: center;
 }
@@ -293,15 +278,14 @@ h2 {
 
 .metric-value {
   font-size: 3.5rem;
-  font-weight: 800; /* Thicker font */
-  color: var(--brand-primary); /* Make it BLUE by default */
+  font-weight: 800;
+  color: var(--brand-primary); 
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
-/* Target the second metric (Ulnar/Radial) to make it ORANGE */
 .live-data-metric:nth-child(2) .metric-value {
-  color: var(--brand-accent); /* Make the second number ORANGE */
+  color: var(--brand-accent);
 }
 
 .metric-value-suffix {
@@ -321,20 +305,20 @@ h2 {
 
 .angle-gauge-container-new {
   width: 100%;
-  margin-top: auto; /* Pushes gauges to the bottom */
+  margin-top: auto;
 }
 
 .angle-gauge-new {
   background-color: #e2e8f0;
   border-radius: 6px;
-  height: 16px; /* A bit thinner */
+  height: 16px;
   width: 100%;
   position: relative;
   overflow: hidden;
 }
 
 .gauge-bar-new {
-  background: var(--brand-primary); /* Simpler, solid color */
+  background: var(--brand-primary);
   height: 100%;
   border-radius: 6px;
   transition: width 0.1s linear;
@@ -349,16 +333,16 @@ h2 {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
-/* --- MOTOR CONTROLS (Refactored) --- */
+/* --- MOTOR CONTROLS --- */
 .motor-controls-wrapper {
-  background-color: #f8fafc; /* Same as your old container */
+  background-color: #f8fafc;
   padding: 1.5rem;
   border-radius: 8px;
   border: 1px solid var(--border-color);
 }
 
 .motor-controls-wrapper h3 {
-  font-size: 1.1rem; /* Slightly larger title */
+  font-size: 1.1rem;
   font-weight: 600;
   margin-top: 0;
   margin-bottom: 1.5rem;
@@ -370,7 +354,7 @@ h2 {
 .motor-controls-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem; /* Gap between manual and preset columns */
+  gap: 2rem;
 }
 
 .manual-controls h4,
@@ -400,62 +384,152 @@ h2 {
   width: 100%;
 }
 
-.gamepad-controls-new {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 1rem; /* Smaller gap */
-  justify-items: center;
-  align-items: center;
+/* --- CIRCULAR DIAL CONTROLS (Clean Website Theme) --- */
+.circular-dial-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
 }
 
-.gamepad-btn-new {
-  font-size: 1.5rem; /* Icon size */
-  width: 60px;
-  height: 60px;
+.pie-dial {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  
+  /* --- Clipping Fix --- */
+  overflow: hidden; 
+  clip-path: circle(50% at 50% 50%);
+  transform: translateZ(0); 
+  
+  /* Subtle border to match theme */
+  border: 1px solid var(--border-color);
+  /* Very light gradient background */
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+/* THE SEGMENTS (Subtle White/Grey) */
+.seg-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 50%;
+  /* Default: White */
+  background-color: #ffffff; 
+  border: none;
+  /* Lines: Use the standard border color */
+  outline: 1px solid var(--border-color); 
+  transform-origin: 0% 100%; /* Anchor at center */
+  cursor: pointer;
+  transition: background-color 0.2s;
+  padding: 0;
+  margin: 0;
+  z-index: 1;
+}
+
+/* Hover: Subtle Light Blue */
+.seg-btn:hover:not(:disabled) {
+  background-color: #e0f2fe; 
+}
+
+/* Active: Slightly darker Blue */
+.seg-btn:active:not(:disabled) {
+  background-color: #bae6fd;
+}
+
+/* Disabled: Just dim opacity */
+.seg-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- ROTATION LOGIC --- */
+.seg-top { transform: rotate(-67.5deg) skewY(-45deg); }
+.seg-tr { transform: rotate(-22.5deg) skewY(-45deg); }
+.seg-right { transform: rotate(22.5deg) skewY(-45deg); }
+.seg-br { transform: rotate(67.5deg) skewY(-45deg); }
+.seg-bottom { transform: rotate(112.5deg) skewY(-45deg); }
+.seg-bl { transform: rotate(157.5deg) skewY(-45deg); }
+.seg-left { transform: rotate(202.5deg) skewY(-45deg); }
+.seg-tl { transform: rotate(247.5deg) skewY(-45deg); }
+
+/* --- CENTER BUTTON (Accent Orange) --- */
+.dial-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  
+  /* Matches your website's accent color */
+  background-color: var(--brand-accent); 
+  border: 8px solid white; /* White ring gap */
+  
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
+  z-index: 10; /* Top layer */
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
+}
+
+.dial-center:active:not(:disabled) {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+.dial-center:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.center-dot {
+  width: 12px;
+  height: 12px;
   background-color: white;
-  color: #334155; /* A softer gray */
-  border: 1px solid #cbd5e1;
   border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Relax Button */
+.relax-btn {
+  width: 100%;
+  background-color: #fef3c7; 
+  color: #d97706;
+  border: 1px solid #fcd34d;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  margin-top: 1rem;
 }
 
-.gamepad-btn-new:hover:not(:disabled) {
-  background-color: #f8fafc;
-  color: var(--brand-primary);
-  border-color: var(--brand-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+.relax-btn:hover:not(:disabled) {
+  background-color: #fde68a;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+  transform: translateY(-1px);
 }
 
-.gamepad-btn-new:disabled {
-  background-color: #f1f5f9;
-  color: #94a3b8;
+.relax-btn:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-.gamepad-btn-new.gamepad-btn-center {
-  background-color: var(--brand-primary);
-  border-color: var(--brand-primary);
-  color: white;
-  font-size: 1.75rem;
-}
-
-.gamepad-btn-new.gamepad-btn-center:hover:not(:disabled) {
-  background-color: #0284c7;
-}
-
-/* --- EXERCISE CONTROLS (Refactored) --- */
+/* --- EXERCISE CONTROLS --- */
 .exercise-controls-wrapper {
-  /* This pushes it to the bottom of the flex column */
   margin-top: auto;
-  padding-top: 1.5rem; /* Space above it */
-  border-top: 1px solid var(--border-color); /* Separator line */
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .exercise-select-group {
@@ -470,7 +544,6 @@ h2 {
   margin-bottom: 0.5rem;
 }
 
-/* Base input styles for selects */
 .exercise-select,
 .angle-input {
   background-color: white;
@@ -493,7 +566,7 @@ h2 {
   margin-top: 1rem;
 }
 
-/* Base Button Styles */
+/* --- BUTTON STYLES --- */
 .start-btn,
 .stop-btn,
 .emergency-stop-btn,
@@ -501,69 +574,69 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem; /* Space between icon and text */
+  gap: 0.75rem;
   width: 100%;
   padding: 0.85rem;
   font-size: 0.95rem;
   font-weight: 600;
   border-radius: 8px;
-  border: none;
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
 }
 
-.start-btn:disabled,
-.stop-btn:disabled,
-.emergency-stop-btn:disabled,
-.send-all-angles-btn:disabled {
-  background-color: #cbd5e1; /* Gray */
-  color: #64748b;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* Specific Button Colors */
+/* 1. Start Button (Green Gradient) */
 .start-btn {
-  background-color: var(--status-success); /* Green */
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-}
-.start-btn:hover:not(:disabled) {
-  background-color: #059669;
+  border: none;
 }
 
+/* 2. Stop Button (Rose Gradient) */
 .stop-btn {
-  background-color: #f43f5e; /* Rose */
+  background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
   color: white;
-}
-.stop-btn:hover:not(:disabled) {
-  background-color: #e11d48;
+  border: none;
 }
 
+/* 3. Emergency Stop (Red Gradient) */
 .emergency-stop-btn {
   margin-top: 1rem;
-  background-color: var(--status-error); /* Red */
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
   color: white;
-}
-.emergency-stop-btn:hover:not(:disabled) {
-  background-color: #dc2626;
+  border: none;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
+/* 4. Manual Command Button (Solid Blue) */
 .send-all-angles-btn {
   margin-top: 1rem;
   background-color: white;
   color: var(--brand-primary);
-  border: 1px solid var(--brand-primary);
+  border: 2px solid var(--brand-primary);
 }
 .send-all-angles-btn:hover:not(:disabled) {
-  background-color: #f0f9ff;
+  background-color: var(--brand-primary);
+  color: white;
 }
 
-/* --- PROGRESS TRACKER COLUMN --- */
-.progress-tracking h2 {
-  margin-bottom: 0.5rem;
+/* --- VISIBLE DISABLED STATES --- */
+.start-btn:disabled,
+.stop-btn:disabled,
+.emergency-stop-btn:disabled {
+  opacity: 0.6; /* Fully visible just dimmed */
+  cursor: not-allowed;
+  filter: none; 
+  box-shadow: none;
 }
 
-/* CHART STYLES */
+.send-all-angles-btn:disabled {
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* --- PROGRESS TRACKER & LIST --- */
 .chart-container {
   background-color: white;
   border-radius: 16px;
@@ -584,7 +657,6 @@ h2 {
   display: block;
 }
 
-/* RECENT SESSIONS LIST */
 .session-summary h3 {
   font-size: 1.1rem;
   font-weight: 600;
@@ -598,41 +670,49 @@ h2 {
   margin: 0;
   max-height: 350px;
   overflow-y: auto;
-  
-  /* Adds fading at the top and bottom of the scroll */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 5%,
-    black 95%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 5%,
-    black 95%,
-    transparent 100%
-  );
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
 }
 
 .session-list li {
-  background-color: white;
   padding: 1rem 1.25rem;
   border-radius: 8px;
   margin-bottom: 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border: 1px solid var(--border-color);
-  box-shadow: none;
+  border: 1px solid transparent;
   transition: all 0.2s ease-in-out;
 }
 
-.session-list li:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-  border-color: var(--brand-primary);
+/* Safe Session (Green) */
+.session-list li.session-safe {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+}
+.session-list li.session-safe:hover {
+  border-color: var(--status-success);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Emergency Session (Peach) */
+.session-list li.session-emergency {
+  background-color: #fff7ed;
+  border-color: #fed7aa;
+}
+.session-list li.session-emergency:hover {
+  border-color: var(--brand-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.emergency-badge {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #c2410c;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .session-info {
@@ -656,8 +736,8 @@ h2 {
 .session-reps {
   font-size: 0.8rem;
   font-weight: 600;
-  background-color: #eef2ff; /* Light indigo */
-  color: #4338ca; /* Indigo */
+  background-color: #eef2ff;
+  color: #4338ca;
   padding: 0.3rem 0.75rem;
   border-radius: 20px;
   border: 1px solid #c7d2fe;
@@ -669,52 +749,3 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
-
-/* src/pages/PatientDashboard.css */
-
-/* ... existing CSS ... */
-
-.session-list li {
-  /* Keep padding and border radius from before */
-  padding: 1rem 1.25rem;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid transparent; /* Placeholder for specific border */
-  transition: all 0.2s ease-in-out;
-}
-
-/* --- NEW: Safe Session (Green) --- */
-.session-list li.session-safe {
-  background-color: #f0fdf4; /* Very Light Green */
-  border-color: #bbf7d0;     /* Light Green Border */
-}
-.session-list li.session-safe:hover {
-  border-color: var(--status-success);
-  box-shadow: var(--shadow-sm);
-}
-
-/* --- NEW: Emergency Session (Peach) --- */
-.session-list li.session-emergency {
-  background-color: #fff7ed; /* Very Light Orange/Peach */
-  border-color: #fed7aa;     /* Peach Border */
-}
-.session-list li.session-emergency:hover {
-  border-color: var(--brand-accent);
-  box-shadow: var(--shadow-sm);
-}
-
-/* --- NEW: Emergency Badge Text --- */
-.emergency-badge {
-  display: block; /* Put it on a new line below exercise name */
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #c2410c; /* Dark Orange */
-  margin-top: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-/* ... existing CSS ... */
