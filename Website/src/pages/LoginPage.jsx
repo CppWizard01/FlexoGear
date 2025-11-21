@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { Link } from "react-router-dom"; // <--- 1. IMPORT LINK
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./LoginPage.css";
 
@@ -14,18 +15,15 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Toggle State
   const [selectedRole, setSelectedRole] = useState("patient");
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // --- NEW: Check for errors passed from a previous failed attempt ---
   useEffect(() => {
     const storedError = sessionStorage.getItem("loginError");
     if (storedError) {
       setError(storedError);
-      sessionStorage.removeItem("loginError"); // Clear it so it doesn't stay forever
+      sessionStorage.removeItem("loginError");
     }
   }, []);
 
@@ -35,7 +33,6 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      // 1. Attempt to Sign In
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -43,7 +40,6 @@ function LoginPage() {
       );
       const user = userCredential.user;
 
-      // 2. Check Firestore for the Role
       const userDocRef = doc(db, "users01", user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
@@ -51,31 +47,20 @@ function LoginPage() {
         const userData = userDocSnap.data();
         const actualRole = userData.role ? userData.role.toLowerCase() : "";
 
-        // 3. STRICT CHECK: Role Mismatch
         if (actualRole !== selectedRole) {
-          // Save the error so it survives the page reload
           sessionStorage.setItem(
             "loginError",
             "Invalid credentials, try again"
           );
-
-          // Force Sign Out
           await signOut(auth);
-
-          // We don't need to setLoading(false) here because the app will
-          // reload the login page and pick up the error from sessionStorage.
           return;
         }
-
-        // If role matches, do nothing. App.js handles the redirect.
       } else {
-        // Edge Case: Auth exists but no DB record
         sessionStorage.setItem("loginError", "Invalid credentials, try again");
         await signOut(auth);
       }
     } catch (firebaseError) {
       console.error("Login error:", firebaseError);
-      // Standard wrong password/email error
       setError("Invalid credentials, try again");
       setLoading(false);
     }
@@ -94,7 +79,6 @@ function LoginPage() {
         <h1 className="login-title">FlexoGear</h1>
         <p className="login-subtitle">Wearable Wrist Rehabilitation</p>
 
-        {/* Role Selector */}
         <div className="role-selector">
           <button
             type="button"
@@ -122,7 +106,6 @@ function LoginPage() {
             aria-label="Email Address"
           />
 
-          {/* Password Input with Eye Icon */}
           <div className="password-input-wrapper">
             <input
               type={showPassword ? "text" : "password"}
@@ -141,13 +124,19 @@ function LoginPage() {
             </span>
           </div>
 
-          {/* Error Message */}
           {error && <p className="error-message">{error}</p>}
 
           <button type="submit" disabled={loading}>
             {loading ? "Verifying..." : "Login"}
           </button>
         </form>
+
+        {/* --- 2. ADDED SIGN UP LINK HERE --- */}
+        <div className="login-helpers">
+          <Link to="/signup">
+             <strong>Create Account</strong>
+          </Link>
+        </div>
       </div>
     </div>
   );

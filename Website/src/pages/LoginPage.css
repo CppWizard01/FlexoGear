@@ -6,6 +6,7 @@
   justify-content: center;
   min-height: 100vh;
   padding: 1rem;
+  
   /* Waves Background */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2386EFAC' fill-opacity='0.4' d='M0,224L48,208C96,192,192,160,288,170.7C384,181,480,235,576,250.7C672,267,768,245,864,208C960,171,1056,117,1152,112C1248,107,1344,149,1392,170.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2360A5FA' fill-opacity='0.4' d='M0,160L48,181.3C96,203,192,245,288,256C384,267,480,245,576,208C672,171,768,117,864,112C960,107,1056,149,1152,165.3C1248,181,1344,171,1392,165.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
@@ -69,6 +70,7 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Form Styles */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -83,6 +85,7 @@
   border-radius: 0.5rem;
   font-size: 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%; /* Ensure inputs fill width */
 }
 
 .login-form input:focus {
@@ -91,6 +94,36 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
+/* Password Wrapper */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  padding-right: 2.5rem; /* Make room for the eye icon */
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.password-toggle-icon:hover {
+  color: var(--brand-primary);
+}
+
+/* Buttons */
 .login-form button {
   background-color: var(--brand-secondary);
   color: var(--text-on-accent);
@@ -123,6 +156,27 @@
   margin-bottom: 1rem;
 }
 
+/* Helper Links (Sign Up) */
+.login-helpers {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.login-helpers a {
+  color: var(--brand-secondary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-helpers a:hover {
+  text-decoration: underline;
+}
+
+.login-helpers strong {
+  font-weight: 700;
+}
+
 /* Mascot styles */
 .login-mascot {
   height: 80px;
@@ -136,47 +190,3 @@
   50% { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
 }
-
-/* src/pages/LoginPage.css */
-
-/* ... existing styles ... */
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* NEW: Wrapper to handle positioning */
-.password-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-/* Ensure the input inside the wrapper behaves correctly */
-.password-input-wrapper input {
-  width: 100%;
-  padding-right: 2.5rem; /* Add space on the right so text doesn't hit the icon */
-}
-
-/* NEW: The Eye Icon Style */
-.password-toggle-icon {
-  position: absolute;
-  right: 12px; /* Position from the right edge */
-  cursor: pointer;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s ease;
-  font-size: 1.1rem;
-  z-index: 2; /* Ensure it sits on top of the input */
-}
-
-.password-toggle-icon:hover {
-  color: var(--brand-primary);
-}
-
-/* ... rest of existing styles ... */

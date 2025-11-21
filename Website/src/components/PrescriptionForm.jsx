@@ -18,13 +18,29 @@ import {
   FaDotCircle,
 } from "react-icons/fa";
 
-// The building blocks available to the doctor
+// --- UPDATED COMMAND LIST (With Diagonals) ---
 const AVAILABLE_COMMANDS = [
+  {
+    label: "TOP_LEFT",
+    icon: <FaArrowUp style={{ transform: "rotate(-45deg)" }} />,
+  },
   { label: "TOP", icon: <FaArrowUp /> },
-  { label: "BOTTOM", icon: <FaArrowDown /> },
+  {
+    label: "TOP_RIGHT",
+    icon: <FaArrowUp style={{ transform: "rotate(45deg)" }} />,
+  },
   { label: "LEFT", icon: <FaArrowLeft /> },
-  { label: "RIGHT", icon: <FaArrowRight /> },
   { label: "CENTER", icon: <FaDotCircle /> },
+  { label: "RIGHT", icon: <FaArrowRight /> },
+  {
+    label: "BOTTOM_LEFT",
+    icon: <FaArrowDown style={{ transform: "rotate(45deg)" }} />,
+  },
+  { label: "BOTTOM", icon: <FaArrowDown /> },
+  {
+    label: "BOTTOM_RIGHT",
+    icon: <FaArrowDown style={{ transform: "rotate(-45deg)" }} />,
+  },
 ];
 
 function PrescriptionForm({ patientId, existingPrescription, onClose }) {
@@ -43,14 +59,11 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
     ).join("\n")
   );
 
-  // State: Manual vs Automated
-  // If existing prescription has a sequence > 0, it's automated
   const [isAutomated, setIsAutomated] = useState(
     existingPrescription?.automationSequence &&
       existingPrescription.automationSequence.length > 0
   );
 
-  // State: The Custom Sequence being built
   const [customSequence, setCustomSequence] = useState(
     existingPrescription?.automationSequence || []
   );
@@ -59,7 +72,6 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
   const [error, setError] = useState("");
   const isEditing = Boolean(existingPrescription);
 
-  // --- BUILDER FUNCTIONS ---
   const addToSequence = (command) => {
     setCustomSequence([...customSequence, command]);
   };
@@ -85,7 +97,6 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
       return;
     }
 
-    // Validation: If automated, must have at least 2 steps
     if (isAutomated && customSequence.length < 2) {
       setError(
         "Automated exercises must have at least 2 steps in the sequence."
@@ -102,8 +113,6 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
         .split("\n")
         .filter((line) => line.trim() !== ""),
       dateAssigned: serverTimestamp(),
-
-      // Save the custom sequence if automated, otherwise empty array
       automationSequence: isAutomated ? customSequence : [],
     };
 
@@ -141,7 +150,7 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
         <h2>{isEditing ? "Edit Prescription" : "Assign New Exercise"}</h2>
 
         <form onSubmit={handleSubmit}>
-          {/* --- TYPE SELECTION --- */}
+          {/* Exercise Type Toggle */}
           <div className="form-group">
             <label>Exercise Type:</label>
             <div className="type-toggle">
@@ -165,12 +174,11 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
             </div>
           </div>
 
-          {/* --- SEQUENCE BUILDER (Only if Automated) --- */}
+          {/* Sequence Builder */}
           {isAutomated && (
             <div className="sequence-builder">
               <label>Build Sequence (Click to add step):</label>
 
-              {/* 1. Control Palette */}
               <div className="builder-controls">
                 {AVAILABLE_COMMANDS.map((cmd) => (
                   <button
@@ -179,12 +187,11 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
                     className="builder-btn"
                     onClick={() => addToSequence(cmd.label)}
                   >
-                    {cmd.icon} {cmd.label}
+                    {cmd.icon} {cmd.label.replace("_", " ")}
                   </button>
                 ))}
               </div>
 
-              {/* 2. Visual Sequence Display */}
               <div className="sequence-display">
                 {customSequence.length === 0 ? (
                   <span className="empty-msg">

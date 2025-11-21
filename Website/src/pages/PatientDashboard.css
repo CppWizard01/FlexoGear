@@ -132,7 +132,6 @@ h2 {
   white-space: nowrap;
 }
 
-/* Status States */
 .status-disconnected {
   background-color: #f8fafc;
 }
@@ -333,84 +332,65 @@ h2 {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
-/* --- MOTOR CONTROLS --- */
+/* --- MOTOR CONTROLS CONTAINER --- */
 .motor-controls-wrapper {
   background-color: #f8fafc;
-  padding: 1.5rem;
+  padding: 2rem;
   border-radius: 8px;
   border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  text-align: center;
 }
 
 .motor-controls-wrapper h3 {
   font-size: 1.1rem;
   font-weight: 600;
   margin-top: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 1rem;
-}
-
-.motor-controls-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-.manual-controls h4,
-.preset-controls h4 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-top: 0;
-  margin-bottom: 0.25rem;
-}
-
-.manual-controls p,
-.preset-controls p {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin-top: 0;
-  margin-bottom: 1rem;
-}
-
-.manual-inputs-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.angle-preset-group .angle-input {
   width: 100%;
 }
 
-/* --- CIRCULAR DIAL CONTROLS --- */
+.motor-controls-wrapper p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.dial-controls-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+
+/* --- CIRCULAR DIAL --- */
 .circular-dial-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 1.5rem;
-  padding: 1rem 0;
 }
+
+/* Add this to your .pie-dial class in PatientDashboard.css */
 
 .pie-dial {
   position: relative;
   width: 260px;
   height: 260px;
   border-radius: 50%;
-  
-  /* --- Clipping Fix --- */
   overflow: hidden; 
   clip-path: circle(50% at 50% 50%);
-  transform: translateZ(0); 
-  
-  /* Subtle border to match theme */
+  transform: translateZ(0) rotate(-22.5deg); /* ← Added rotate(-90deg) */
   border: 1px solid var(--border-color);
-  /* Very light gradient background */
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+  background-color: white;
 }
 
-/* THE SEGMENTS */
 .seg-btn {
   position: absolute;
   top: 0;
@@ -420,7 +400,7 @@ h2 {
   background-color: #ffffff; 
   border: none;
   outline: 1px solid var(--border-color); 
-  transform-origin: 0% 100%; /* Anchor at center */
+  transform-origin: 0% 100%; 
   cursor: pointer;
   transition: background-color 0.2s;
   padding: 0;
@@ -441,30 +421,27 @@ h2 {
   cursor: not-allowed;
 }
 
-/* --- ROTATION LOGIC (Corrected: Shifted +45deg clockwise) --- */
-.seg-top    { transform: rotate(-22.5deg) skewY(-45deg); }
-.seg-tr     { transform: rotate(22.5deg) skewY(-45deg); }
-.seg-right  { transform: rotate(67.5deg) skewY(-45deg); }
-.seg-br     { transform: rotate(112.5deg) skewY(-45deg); }
-.seg-bottom { transform: rotate(157.5deg) skewY(-45deg); }
-.seg-bl     { transform: rotate(202.5deg) skewY(-45deg); }
-.seg-left   { transform: rotate(247.5deg) skewY(-45deg); }
-.seg-tl     { transform: rotate(292.5deg) skewY(-45deg); }
+/* Update these segment transforms in PatientDashboard.css */
 
-/* --- CENTER BUTTON --- */
+.seg-top    { transform: rotate(0deg) skewY(-45deg); }      /* Top - 0° */
+.seg-tr     { transform: rotate(45deg) skewY(-45deg); }     /* Top Right - 45° */
+.seg-right  { transform: rotate(90deg) skewY(-45deg); }     /* Right - 90° */
+.seg-br     { transform: rotate(135deg) skewY(-45deg); }    /* Bottom Right - 135° */
+.seg-bottom { transform: rotate(180deg) skewY(-45deg); }    /* Bottom - 180° */
+.seg-bl     { transform: rotate(225deg) skewY(-45deg); }    /* Bottom Left - 225° */
+.seg-left   { transform: rotate(270deg) skewY(-45deg); }    /* Left - 270° */
+.seg-tl     { transform: rotate(315deg) skewY(-45deg); }    /* Top Left - 315° */
+
 .dial-center {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  
   width: 90px;
   height: 90px;
   border-radius: 50%;
-  
   background-color: var(--brand-accent); 
   border: 8px solid white;
-  
   display: flex;
   justify-content: center;
   align-items: center;
@@ -490,28 +467,33 @@ h2 {
   box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
-/* Relax Button */
 .relax-btn {
-  width: 100%;
+  width: 120px; 
+  height: 120px;
   background-color: #fef3c7; 
   color: #d97706;
   border: 1px solid #fcd34d;
-  padding: 0.75rem;
-  border-radius: 8px;
+  border-radius: 16px;
   font-weight: 600;
+  font-size: 1.1rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-top: 1rem;
+  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.1);
+}
+
+.relax-btn svg {
+  font-size: 2rem;
 }
 
 .relax-btn:hover:not(:disabled) {
   background-color: #fde68a;
-  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(245, 158, 11, 0.2);
 }
 
 .relax-btn:disabled {
@@ -560,11 +542,9 @@ h2 {
   margin-top: 1rem;
 }
 
-/* --- BUTTON STYLES --- */
 .start-btn,
 .stop-btn,
-.emergency-stop-btn,
-.send-all-angles-btn {
+.emergency-stop-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -599,18 +579,6 @@ h2 {
   letter-spacing: 0.5px;
 }
 
-.send-all-angles-btn {
-  margin-top: 1rem;
-  background-color: white;
-  color: var(--brand-primary);
-  border: 2px solid var(--brand-primary);
-}
-.send-all-angles-btn:hover:not(:disabled) {
-  background-color: var(--brand-primary);
-  color: white;
-}
-
-/* --- VISIBLE DISABLED STATES --- */
 .start-btn:disabled,
 .stop-btn:disabled,
 .emergency-stop-btn:disabled {
@@ -618,12 +586,6 @@ h2 {
   cursor: not-allowed;
   filter: none; 
   box-shadow: none;
-}
-
-.send-all-angles-btn:disabled {
-  border-color: #cbd5e1;
-  color: #94a3b8;
-  cursor: not-allowed;
 }
 
 /* --- PROGRESS TRACKER & LIST --- */
@@ -675,7 +637,6 @@ h2 {
   transition: all 0.2s ease-in-out;
 }
 
-/* Safe Session (Green) */
 .session-list li.session-safe {
   background-color: #f0fdf4;
   border-color: #bbf7d0;
@@ -685,7 +646,6 @@ h2 {
   box-shadow: var(--shadow-sm);
 }
 
-/* Emergency Session (Peach) */
 .session-list li.session-emergency {
   background-color: #fff7ed;
   border-color: #fed7aa;
@@ -739,3 +699,4 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+

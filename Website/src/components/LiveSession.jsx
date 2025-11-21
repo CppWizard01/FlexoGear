@@ -22,20 +22,17 @@ const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
 
-// --- AUTOMATION CONSTANTS (User Defined) ---
-const MOTOR_POS_TOP_LEFT = { a1: "0", a2: "0", a3: "180" };
+// --- AUTOMATION CONSTANTS ---
+const MOTOR_POS_TOP_RIGHT = { a1: "0", a2: "120", a3: "90" };
 const MOTOR_POS_TOP = { a1: "0", a2: "180", a3: "180" };
-const MOTOR_POS_TOP_RIGHT = { a1: "180", a2: "150", a3: "30" };
-
+const MOTOR_POS_TOP_LEFT = { a1: "90", a2: "180", a3: "30" };
 const MOTOR_POS_LEFT = { a1: "180", a2: "180", a3: "0" };
 const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" };
 const MOTOR_POS_RIGHT = { a1: "0", a2: "0", a3: "60" };
-
 const MOTOR_POS_BOTTOM_LEFT = { a1: "180", a2: "180", a3: "0" };
 const MOTOR_POS_BOTTOM = { a1: "180", a2: "0", a3: "0" };
 const MOTOR_POS_BOTTOM_RIGHT = { a1: "60", a2: "0", a3: "0" };
-
-const MOTOR_POS_RELAX = { a1: "180", a2: "0", a3: "180" }; // No Load
+const MOTOR_POS_RELAX = { a1: "180", a2: "0", a3: "180" };
 
 const MOTOR_COMMAND_MAP = {
   TOP_LEFT: MOTOR_POS_TOP_LEFT,
@@ -106,11 +103,6 @@ function LiveSession() {
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [isCalibrated, setIsCalibrated] = useState(false);
 
-  // Motor angle manual inputs
-  const [anglePreset1, setAnglePreset1] = useState("90");
-  const [anglePreset2, setAnglePreset2] = useState("90");
-  const [anglePreset3, setAnglePreset3] = useState("90");
-
   const [isAutomating, setIsAutomating] = useState(false);
   const [automationStep, setAutomationStep] = useState(0);
 
@@ -120,8 +112,6 @@ function LiveSession() {
   const rawQuaternionRef = useRef({ w: 1, x: 0, y: 0, z: 0 });
   const automationTimerRef = useRef(null);
   const calibrationQuaternionRef = useRef(null);
-
-  // Save Lock to prevent duplicate entries
   const isSavingRef = useRef(false);
 
   useEffect(() => {
@@ -174,8 +164,6 @@ function LiveSession() {
       );
 
       setConnectionStatus("Connected");
-
-      // --- MOVE TO 90-90-90 ON CONNECT ---
       await sendMotorCommand(MOTOR_POS_CENTER);
 
       await char.startNotifications();
@@ -221,7 +209,6 @@ function LiveSession() {
 
   const handleDisconnect = async () => {
     if (deviceRef.current?.gatt?.connected) {
-      // --- RELAX MOTORS (180,0,180) BEFORE DISCONNECT ---
       await sendMotorCommand(MOTOR_POS_RELAX);
       deviceRef.current.gatt.disconnect();
     } else {
@@ -237,16 +224,11 @@ function LiveSession() {
     setLiveAngles({ pitch: 0, yaw: 0 });
   };
 
-  const handleSendAllAngles = () => {
-    sendMotorCommand({ a1: anglePreset1, a2: anglePreset2, a3: anglePreset3 });
-  };
-
   // --- MANUAL EFFECT (IMU) ---
   useEffect(() => {
     if (!isSessionActive || !selectedPrescription || isAutomating) return;
     const { pitch } = liveAngles;
 
-    // Update progress bar
     const totalRepsTarget =
       selectedPrescription.targetReps * selectedPrescription.targetSets;
     const completedRepsTotal =
@@ -385,7 +367,6 @@ function LiveSession() {
     repPhaseRef.current = "start";
     setIsSessionActive(true);
 
-    // --- FORCE 90-90-90 ON START ---
     sendMotorCommand(MOTOR_POS_CENTER);
 
     if (
@@ -411,7 +392,6 @@ function LiveSession() {
     setIsAutomating(false);
     clearTimeout(automationTimerRef.current);
 
-    // --- RELAX MOTORS ON STOP (180-0-180) ---
     sendMotorCommand(MOTOR_POS_RELAX);
 
     if (autoCompleted) {
@@ -504,31 +484,7 @@ function LiveSession() {
         targetSets={selectedPrescription?.targetSets}
       />
 
-      <MotorControls
-        anglePreset1={anglePreset1}
-        setAnglePreset1={setAnglePreset1}
-        anglePreset2={anglePreset2}
-        setAnglePreset2={setAnglePreset2}
-        anglePreset3={anglePreset3}
-        setAnglePreset3={setAnglePreset3}
-        onSendManual={handleSendAllAngles}
-        onSendPreset={sendMotorCommand} // Pass the function
-        isConnected={connectionStatus === "Connected"}
-        // PASS THE POSITIONS HERE
-        positions={{
-          TOP_LEFT: MOTOR_POS_TOP_LEFT,
-          TOP: MOTOR_POS_TOP,
-          TOP_RIGHT: MOTOR_POS_TOP_RIGHT,
-          LEFT: MOTOR_POS_LEFT,
-          CENTER: MOTOR_POS_CENTER,
-          RIGHT: MOTOR_POS_RIGHT,
-          BOTTOM_LEFT: MOTOR_POS_BOTTOM_LEFT,
-          BOTTOM: MOTOR_POS_BOTTOM,
-          BOTTOM_RIGHT: MOTOR_POS_BOTTOM_RIGHT,
-          RELAX: MOTOR_POS_RELAX,
-        }}
-      />
-
+      {/* --- REORDERED: Exercise Controls FIRST --- */}
       <ExerciseControls
         prescriptions={prescriptions}
         selectedPrescription={selectedPrescription}
@@ -548,6 +504,24 @@ function LiveSession() {
         onStop={() => handleStopSession(false)}
         onEmergencyStop={handleEmergencyStop}
         isConnected={connectionStatus === "Connected"}
+      />
+
+      {/* --- REORDERED: Motor Controls SECOND --- */}
+      <MotorControls
+        onSendPreset={sendMotorCommand}
+        isConnected={connectionStatus === "Connected"}
+        positions={{
+          TOP_LEFT: MOTOR_POS_TOP_LEFT,
+          TOP: MOTOR_POS_TOP,
+          TOP_RIGHT: MOTOR_POS_TOP_RIGHT,
+          LEFT: MOTOR_POS_LEFT,
+          CENTER: MOTOR_POS_CENTER,
+          RIGHT: MOTOR_POS_RIGHT,
+          BOTTOM_LEFT: MOTOR_POS_BOTTOM_LEFT,
+          BOTTOM: MOTOR_POS_BOTTOM,
+          BOTTOM_RIGHT: MOTOR_POS_BOTTOM_RIGHT,
+          RELAX: MOTOR_POS_RELAX,
+        }}
       />
     </section>
   );

@@ -7,6 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
 import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage"; // <-- 1. IMPORT ADDED
 import PatientDashboard from "./pages/PatientDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import LoadingScreen from "./components/LoadingScreen";
@@ -75,8 +76,7 @@ function App() {
     signOut(auth);
   };
 
-  // --- UPDATED LOADING CONDITION ---
-  // We check if Auth is loading, Role is loading, OR if the 2 seconds haven't passed yet
+  // --- LOADING CONDITION ---
   if (loadingAuth || (currentUser && loadingRole) || !minLoadTimePassed) {
     return <LoadingScreen />;
   }
@@ -97,6 +97,10 @@ function App() {
           )
         }
       />
+
+      {/* --- 2. ROUTE ADDED --- */}
+      <Route path="/signup" element={<SignupPage />} />
+
       <Route
         path="/patient"
         element={
