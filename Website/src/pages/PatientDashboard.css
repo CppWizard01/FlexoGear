@@ -669,3 +669,52 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+
+/* src/pages/PatientDashboard.css */
+
+/* ... existing CSS ... */
+
+.session-list li {
+  /* Keep padding and border radius from before */
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid transparent; /* Placeholder for specific border */
+  transition: all 0.2s ease-in-out;
+}
+
+/* --- NEW: Safe Session (Green) --- */
+.session-list li.session-safe {
+  background-color: #f0fdf4; /* Very Light Green */
+  border-color: #bbf7d0;     /* Light Green Border */
+}
+.session-list li.session-safe:hover {
+  border-color: var(--status-success);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- NEW: Emergency Session (Peach) --- */
+.session-list li.session-emergency {
+  background-color: #fff7ed; /* Very Light Orange/Peach */
+  border-color: #fed7aa;     /* Peach Border */
+}
+.session-list li.session-emergency:hover {
+  border-color: var(--brand-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- NEW: Emergency Badge Text --- */
+.emergency-badge {
+  display: block; /* Put it on a new line below exercise name */
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #c2410c; /* Dark Orange */
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ... existing CSS ... */

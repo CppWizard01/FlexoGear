@@ -277,3 +277,144 @@
   box-sizing: border-box;
   font-size: 1rem;
 }
+
+/* src/pages/DoctorDashboard.css */
+
+/* ... Existing styles ... */
+
+/* --- EXERCISE TYPE TOGGLE --- */
+.type-toggle {
+  display: flex;
+  background-color: var(--app-background);
+  padding: 0.25rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.type-toggle button {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.type-toggle button.active {
+  background-color: var(--card-background);
+  color: var(--brand-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- SEQUENCE BUILDER STYLES --- */
+.sequence-builder {
+  background-color: var(--app-background);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+}
+
+.builder-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.builder-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.builder-btn:hover {
+  background-color: var(--brand-primary);
+  color: white;
+  border-color: var(--brand-primary);
+}
+
+/* The Visual Chain */
+.sequence-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  min-height: 60px;
+  align-items: center;
+}
+
+.empty-msg {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.sequence-step {
+  display: flex;
+  align-items: center;
+  background-color: #eff6ff; /* Light Blue */
+  border: 1px solid #bfdbfe;
+  padding: 0.4rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e40af;
+  position: relative;
+}
+
+.step-index {
+  background-color: #1e40af;
+  color: white;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5rem;
+}
+
+.remove-step-icon {
+  margin-left: 0.5rem;
+  color: #93c5fd;
+  cursor: pointer;
+}
+.remove-step-icon:hover {
+  color: #ef4444;
+}
+
+/* Optional: Arrow between steps using CSS pseudo-elements */
+.sequence-step + .sequence-step::before {
+  content: "→";
+  position: absolute;
+  left: -15px;
+  color: var(--text-secondary);
+}
+
+.clear-seq-btn {
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--status-error);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}

@@ -1,4 +1,4 @@
-// Updated LiveSession.js (Fully Refactored)
+// src/components/LiveSession.js
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -11,11 +11,11 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
-// Import all the new child components
+// Import child components
 import SessionStatus from "./SessionStatus";
 import LiveDataDisplay from "./LiveDataDisplay";
 import MotorControls from "./MotorControls";
-import ExerciseControls from "./ExerciseControls"; // <-- 1. ADDED THIS IMPORT
+import ExerciseControls from "./ExerciseControls";
 
 // --- BLE CONSTANTS ---
 const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
@@ -25,9 +25,12 @@ const COMMAND_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
 // --- AUTOMATION CONSTANTS ---
 const MOTOR_POS_TOP = { a1: "0", a2: "180", a3: "180" };
 const MOTOR_POS_BOTTOM = { a1: "180", a2: "0", a3: "0" };
-const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" };
+const MOTOR_POS_CENTER = { a1: "90", a2: "90", a3: "90" }; // Active/Ready State
 const MOTOR_POS_LEFT = { a1: "0", a2: "0", a3: "0" };
 const MOTOR_POS_RIGHT = { a1: "180", a2: "180", a3: "0" };
+
+// --- NEW: NO LOAD / RELAX STATE ---
+const MOTOR_POS_RELAX = { a1: "180", a2: "0", a3: "180" }; // Motors Loose
 
 const MOTOR_COMMAND_MAP = {
   TOP: MOTOR_POS_TOP,
@@ -37,9 +40,9 @@ const MOTOR_COMMAND_MAP = {
   CENTER: MOTOR_POS_CENTER,
 };
 
-const AUTOMATION_DELAY_MS = 2000; // 2-second gap
+const AUTOMATION_DELAY_MS = 2000;
 
-// --- MATH HELPERS (QUATERNION LOGIC) ---
+// --- MATH HELPERS ---
 const multiplyQuaternions = (q1, q2) => {
   const { w: w1, x: x1, y: y1, z: z1 } = q1;
   const { w: w2, x: x2, y: y2, z: z2 } = q2;
@@ -57,22 +60,13 @@ const conjugateQuaternion = (q) => {
 
 const quaternionToEuler = (q) => {
   const { x: i, y: j, z: k, w: real } = q;
-
-  // Flexion/Extension (Pitch – X axis)
   const sinp = 2 * (real * j - k * i);
   let pitch;
-
-  if (Math.abs(sinp) >= 1) {
-    pitch = (Math.sign(sinp) * Math.PI) / 2;
-  } else {
-    pitch = Math.asin(sinp);
-  }
-
-  // Ulnar/Radial Deviation (Yaw – Z axis)
+  if (Math.abs(sinp) >= 1) pitch = (Math.sign(sinp) * Math.PI) / 2;
+  else pitch = Math.asin(sinp);
   const siny_cosp = 2 * (real * k + i * j);
   const cosy_cosp = 1 - 2 * (j * j + k * k);
   const yaw = Math.atan2(siny_cosp, cosy_cosp);
-
   return {
     pitch: (-pitch * 180) / Math.PI,
     yaw: (yaw * 180) / Math.PI,
@@ -115,7 +109,10 @@ function LiveSession() {
   const deviceRef = useRef(null);
   const rawQuaternionRef = useRef({ w: 1, x: 0, y: 0, z: 0 });
   const automationTimerRef = useRef(null);
-  const calibrationQuaternionRef = useRef(null); // <-- FIX 1: Use ref instead of state
+  const calibrationQuaternionRef = useRef(null);
+
+  // Save Lock to prevent duplicate entries
+  const isSavingRef = useRef(false);
 
   useEffect(() => {
     let unsubscribe = () => {};
@@ -127,7 +124,7 @@ function LiveSession() {
         user.uid,
         "prescriptions"
       );
-      const q = query(prescriptionsRef, orderBy("exerciseName", "asc"));
+      const q = query(prescriptionsRef, orderBy("dateAssigned", "asc"));
       unsubscribe = onSnapshot(q, (qs) => {
         const fetched = [];
         qs.forEach((doc) => fetched.push({ id: doc.id, ...doc.data() }));
@@ -137,91 +134,7 @@ function LiveSession() {
     return () => unsubscribe();
   }, []);
 
-  const handleConnect = async () => {
-    try {
-      setConnectionStatus("Connecting...");
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [{ name: "FlexoGear" }],
-        optionalServices: [SERVICE_UUID],
-      });
-
-      deviceRef.current = device;
-      device.addEventListener("gattserverdisconnected", onDisconnected);
-
-      const server = await device.gatt.connect();
-      const service = await server.getPrimaryService(SERVICE_UUID);
-
-      const char = await service.getCharacteristic(CHARACTERISTIC_UUID);
-      const commandChar = await service.getCharacteristic(
-        COMMAND_CHARACTERISTIC_UUID
-      );
-      commandCharacteristicRef.current = commandChar;
-
-      setConnectionStatus("Connected");
-      await char.startNotifications();
-
-      char.addEventListener("characteristicvaluechanged", (event) => {
-        const value = event.target.value;
-        const decoder = new TextDecoder("utf-8");
-        const dataString = decoder.decode(value);
-
-        if (dataString.split(",").length === 4) {
-          const [x, y, z, w] = dataString.split(",").map(parseFloat);
-
-          if (![x, y, z, w].some(isNaN)) {
-            const currentQ = { w, x, y, z };
-            rawQuaternionRef.current = currentQ;
-
-            let displayQ = currentQ;
-            if (calibrationQuaternionRef.current) {
-              // <-- FIX 2: Read from ref
-              const calInverse = conjugateQuaternion(
-                calibrationQuaternionRef.current
-              );
-              displayQ = multiplyQuaternions(calInverse, currentQ);
-            }
-
-            setLiveAngles(quaternionToEuler(displayQ));
-          }
-        }
-      });
-
-      setIsCalibrating(true);
-      setIsCalibrated(false);
-      setCurrentStepText("Hold hand straight & Press Calibrate");
-    } catch (error) {
-      console.error("Connection failed:", error);
-      setConnectionStatus("Disconnected");
-    }
-  };
-
-  const onDisconnected = () => {
-    setConnectionStatus("Disconnected");
-    setIsCalibrated(false);
-    calibrationQuaternionRef.current = null; // <-- FIX 3: Clear the ref
-    commandCharacteristicRef.current = null;
-    deviceRef.current = null;
-    setIsSessionActive(false);
-    setIsAutomating(false);
-    clearTimeout(automationTimerRef.current);
-  };
-
-  const handleDisconnect = () => {
-    if (deviceRef.current?.gatt?.connected) deviceRef.current.gatt.disconnect();
-    else onDisconnected();
-  };
-
-  const handleCalibrate = () => {
-    calibrationQuaternionRef.current = rawQuaternionRef.current; // <-- FIX 4: Set the ref
-    setIsCalibrating(false);
-    setIsCalibrated(true);
-    setCurrentStepText("Calibrated. Select an exercise.");
-
-    // Force angles to 0 for immediate feedback
-    setLiveAngles({ pitch: 0, yaw: 0 });
-  };
-
-  // --- HELPER to send motor commands ---
+  // --- HELPER: Send Command ---
   const sendMotorCommand = async (positions) => {
     if (!commandCharacteristicRef.current) return;
     try {
@@ -234,21 +147,95 @@ function LiveSession() {
     }
   };
 
-  // --- MANUAL Motor Control Button ---
-  const handleSendAllAngles = () => {
-    sendMotorCommand({
-      a1: anglePreset1,
-      a2: anglePreset2,
-      a3: anglePreset3,
-    });
+  const handleConnect = async () => {
+    try {
+      setConnectionStatus("Connecting...");
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ name: "FlexoGear" }],
+        optionalServices: [SERVICE_UUID],
+      });
+      deviceRef.current = device;
+      device.addEventListener("gattserverdisconnected", onDisconnected);
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      const char = await service.getCharacteristic(CHARACTERISTIC_UUID);
+      commandCharacteristicRef.current = await service.getCharacteristic(
+        COMMAND_CHARACTERISTIC_UUID
+      );
+
+      setConnectionStatus("Connected");
+
+      // --- UPDATE: Move to Center (90,90,90) on Connect ---
+      // We use the helper but need to ensure ref is set (it is line above)
+      await sendMotorCommand(MOTOR_POS_CENTER);
+
+      await char.startNotifications();
+      char.addEventListener("characteristicvaluechanged", (event) => {
+        const value = event.target.value;
+        const decoder = new TextDecoder("utf-8");
+        const dataString = decoder.decode(value);
+        if (dataString.split(",").length === 4) {
+          const [x, y, z, w] = dataString.split(",").map(parseFloat);
+          if (![x, y, z, w].some(isNaN)) {
+            const currentQ = { w, x, y, z };
+            rawQuaternionRef.current = currentQ;
+            let displayQ = currentQ;
+            if (calibrationQuaternionRef.current) {
+              const calInverse = conjugateQuaternion(
+                calibrationQuaternionRef.current
+              );
+              displayQ = multiplyQuaternions(calInverse, currentQ);
+            }
+            setLiveAngles(quaternionToEuler(displayQ));
+          }
+        }
+      });
+      setIsCalibrating(true);
+      setIsCalibrated(false);
+      setCurrentStepText("Hold hand straight & Press Calibrate");
+    } catch (error) {
+      console.error("Connection failed:", error);
+      setConnectionStatus("Disconnected");
+    }
   };
 
-  // --- EFFECT for IMU-based Rep Counting (Manual Mode ONLY) ---
-  useEffect(() => {
-    // This hook now ONLY runs in manual mode
-    if (!isSessionActive || !selectedPrescription || isAutomating) return;
+  const onDisconnected = () => {
+    setConnectionStatus("Disconnected");
+    setIsCalibrated(false);
+    calibrationQuaternionRef.current = null;
+    commandCharacteristicRef.current = null;
+    deviceRef.current = null;
+    setIsSessionActive(false);
+    setIsAutomating(false);
+    clearTimeout(automationTimerRef.current);
+  };
 
-    const { pitch, yaw } = liveAngles;
+  const handleDisconnect = async () => {
+    if (deviceRef.current?.gatt?.connected) {
+      // --- UPDATE: Relax motors (180,0,180) BEFORE disconnecting ---
+      await sendMotorCommand(MOTOR_POS_RELAX);
+      deviceRef.current.gatt.disconnect();
+    } else {
+      onDisconnected();
+    }
+  };
+
+  const handleCalibrate = () => {
+    calibrationQuaternionRef.current = rawQuaternionRef.current;
+    setIsCalibrating(false);
+    setIsCalibrated(true);
+    setCurrentStepText("Calibrated. Select an exercise.");
+    setLiveAngles({ pitch: 0, yaw: 0 });
+  };
+
+  const handleSendAllAngles = () => {
+    sendMotorCommand({ a1: anglePreset1, a2: anglePreset2, a3: anglePreset3 });
+  };
+
+  // --- MANUAL EFFECT (IMU) ---
+  useEffect(() => {
+    if (!isSessionActive || !selectedPrescription || isAutomating) return;
+    const { pitch } = liveAngles;
 
     // Update progress bar
     const totalRepsTarget =
@@ -261,25 +248,24 @@ function LiveSession() {
         : 0
     );
 
-    // Get instruction text from prescription
     const instructions = selectedPrescription.instructions || [];
     const currentInstr =
       instructions[currentStepIndex % instructions.length] || "Exercise";
     setCurrentStepText(currentInstr);
 
-    // Rep counting logic based on IMU thresholds
     const FLEX_THRESHOLD = -30;
     const NEUTRAL_THRESHOLD = -10;
+    const isFlexingStep = currentStepIndex % 2 === 0;
 
     if (
-      currentInstr.includes("Flex") &&
+      isFlexingStep &&
       pitch < FLEX_THRESHOLD &&
       repPhaseRef.current === "start"
     ) {
       repPhaseRef.current = "flexed";
       setCurrentStepIndex((prev) => (prev + 1) % instructions.length);
     } else if (
-      currentInstr.includes("Return") &&
+      !isFlexingStep &&
       pitch > NEUTRAL_THRESHOLD &&
       repPhaseRef.current === "flexed"
     ) {
@@ -290,7 +276,7 @@ function LiveSession() {
       if (newRep >= selectedPrescription.targetReps) {
         const newSet = currentSet + 1;
         if (newSet > selectedPrescription.targetSets) {
-          handleStopSession(true); // Session complete
+          handleStopSession(true);
         } else {
           setCurrentSet(newSet);
           setRepsInSet(0);
@@ -310,13 +296,10 @@ function LiveSession() {
     currentStepIndex,
   ]);
 
-  // --- NEW EFFECT for Max Value Recording (Runs in ALL modes) ---
+  // --- MAX VALUES EFFECT ---
   useEffect(() => {
-    // Only run if the session is active and device is calibrated
     if (!isSessionActive || !isCalibrated) return;
-
-    const { pitch, yaw } = liveAngles; // Update max range of motion
-
+    const { pitch, yaw } = liveAngles;
     setMaxValues((prev) => ({
       flex: Math.min(prev.flex, pitch),
       ext: Math.max(prev.ext, pitch),
@@ -325,76 +308,65 @@ function LiveSession() {
     }));
   }, [liveAngles, isSessionActive, isCalibrated]);
 
-  // --- NEW EFFECT for Automation Loop (Data-Driven AND Fixed) ---
+  // --- AUTOMATION EFFECT ---
   useEffect(() => {
     if (
       !isAutomating ||
       !selectedPrescription?.automationSequence ||
       selectedPrescription.automationSequence.length === 0
-    ) {
-      return; // Do nothing if not automating or no sequence found
-    }
+    )
+      return;
 
-    const sequence = selectedPrescription.automationSequence; // 1. Get the command for the current step (index)
-
+    const sequence = selectedPrescription.automationSequence;
     const commandKey = sequence[automationStep];
     const command = MOTOR_COMMAND_MAP[commandKey];
 
     if (!command) {
-      console.error(`Invalid command key in sequence: ${commandKey}`);
-      setIsAutomating(false); // Stop on error
+      setIsAutomating(false);
       return;
-    } // 2. Send the command
+    }
 
     sendMotorCommand(command);
-    setCurrentStepText(`Moving to: ${commandKey}`); // 3. Determine the next step index
+    setCurrentStepText(`Moving to: ${commandKey}`);
 
     let nextStepIndex = automationStep + 1;
-    let isRepComplete = false; // 4. Check if this step was the end of the sequence (one rep)
+    let isRepComplete = false;
 
     if (nextStepIndex >= sequence.length) {
-      nextStepIndex = 0; // Loop back to the start of the sequence
-      isRepComplete = true; // This rep is finished
-    } // 5. If rep is complete, update rep/set counts (FUNCTIONAL UPDATE)
+      nextStepIndex = 0;
+      isRepComplete = true;
+    }
 
     if (isRepComplete) {
       setCurrentSet((prevSet) => {
         const newRepetitionCount = prevSet + 1;
-
         if (newRepetitionCount > selectedPrescription.targetSets) {
-          handleStopSession(true); // Session complete
-          return prevSet; // Return old state, session will stop
+          handleStopSession(true);
+          return prevSet;
         } else {
-          // We are starting the next repetition
           setCurrentStepText(
             `Rest. Get Ready for Repetition ${newRepetitionCount}`
-          ); // Update progress bar at the same time
-          const totalRepsTarget = selectedPrescription.targetSets || 1;
-          const completedRepsTotal = newRepetitionCount - 1; // e.g., 1 of 15
-          setExerciseProgress(
-            totalRepsTarget > 0
-              ? Math.min((completedRepsTotal / totalRepsTarget) * 100, 100)
-              : 0
           );
-          return newRepetitionCount; // Return new state
+          const total = selectedPrescription.targetSets || 1;
+          const done = newRepetitionCount - 1;
+          setExerciseProgress((done / total) * 100);
+          return newRepetitionCount;
         }
       });
-    } // 6. Set the timer for the next step in the sequence
+    }
 
     automationTimerRef.current = setTimeout(() => {
       setAutomationStep(nextStepIndex);
     }, AUTOMATION_DELAY_MS);
 
     return () => clearTimeout(automationTimerRef.current);
-  }, [
-    isAutomating,
-    automationStep, // This is the index
-    selectedPrescription, // REMOVED repsInSet and currentSet to fix race condition
-  ]);
+  }, [isAutomating, automationStep, selectedPrescription]);
 
   const handleStartSession = () => {
     if (!selectedPrescription) return alert("Select an exercise first.");
     if (!isCalibrated) return alert("Calibrate device first.");
+
+    isSavingRef.current = false;
 
     setRepsInSet(0);
     setCurrentSet(1);
@@ -404,15 +376,16 @@ function LiveSession() {
     repPhaseRef.current = "start";
     setIsSessionActive(true);
 
-    // NEW LOGIC: Check for an automation sequence
+    // --- UPDATE: Force Center (90,90,90) on Start ---
+    sendMotorCommand(MOTOR_POS_CENTER);
+
     if (
       selectedPrescription.automationSequence &&
       selectedPrescription.automationSequence.length > 0
     ) {
-      setAutomationStep(0); // Start at the beginning (index 0)
+      setAutomationStep(0);
       setIsAutomating(true);
     } else {
-      // This is a manual (IMU-based) exercise
       setIsAutomating(false);
     }
   };
@@ -421,47 +394,62 @@ function LiveSession() {
     autoCompleted = false,
     isEmergency = false
   ) => {
+    if (isSavingRef.current) return;
+
     const wasActive = isSessionActive;
 
     setIsSessionActive(false);
     setIsAutomating(false);
     clearTimeout(automationTimerRef.current);
 
-    if (!isEmergency) {
-      setCurrentStepText(
-        autoCompleted ? "Session Complete!" : "Session Stopped."
-      );
+    // --- UPDATE: Stop Logic ---
+    if (autoCompleted) {
+      setExerciseProgress(100);
+      setCurrentStepText("Session Complete!");
+      // Even on completion, we probably want to relax the hand?
+      // Let's assume we want to relax it to 180,0,180
+      sendMotorCommand(MOTOR_POS_RELAX);
+    } else if (isEmergency) {
+      setCurrentStepText("EMERGENCY STOP. Motors released.");
+      // Emergency: Relax immediately
+      sendMotorCommand(MOTOR_POS_RELAX);
+    } else {
+      setCurrentStepText("Session Stopped.");
+      // Manual Stop: Relax
+      sendMotorCommand(MOTOR_POS_RELAX);
     }
 
     const totalCompletedReps =
       (currentSet - 1) * (selectedPrescription?.targetReps || 0) + repsInSet;
 
-    if (
-      wasActive &&
-      totalCompletedReps > 0 &&
-      selectedPrescription &&
-      !isEmergency
-    ) {
+    if (wasActive && selectedPrescription) {
+      isSavingRef.current = true;
+
       const user = auth.currentUser;
       if (user) {
         try {
           await addDoc(collection(db, "users01", user.uid, "sessions"), {
             exerciseName: selectedPrescription.exerciseName,
             reps: autoCompleted
-              ? selectedPrescription.targetSets
+              ? selectedPrescription.automationSequence?.length > 0
+                ? selectedPrescription.targetSets
+                : totalCompletedReps
               : totalCompletedReps,
             maxFlex: Math.round(maxValues.flex),
             maxExt: Math.round(maxValues.ext),
             maxRad: Math.round(maxValues.rad),
             maxUln: Math.round(maxValues.uln),
             timestamp: serverTimestamp(),
+            wasEmergencyStop: isEmergency,
             wasAutomated: !!(
               selectedPrescription.automationSequence &&
               selectedPrescription.automationSequence.length > 0
             ),
           });
+          console.log("Session saved successfully (Single Write)");
         } catch (err) {
           console.error("Save failed", err);
+          isSavingRef.current = false;
         }
       }
     }
@@ -469,12 +457,10 @@ function LiveSession() {
   };
 
   const handleEmergencyStop = () => {
+    // This calls handleStopSession which now handles the MOTOR_POS_RELAX command
     handleStopSession(false, true);
-    sendMotorCommand(MOTOR_POS_CENTER);
-    setCurrentStepText("EMERGENCY STOP. Motors at center.");
   };
 
-  // Calculate gauge percentages
   const pitchPct = Math.max(
     0,
     Math.min(100, ((liveAngles.pitch + 90) / 180) * 100)
@@ -488,7 +474,6 @@ function LiveSession() {
     <section className="live-session">
       <h2>Live Session</h2>
 
-      {/* --- SESSION STATUS (Refactored) --- */}
       <SessionStatus
         connectionStatus={connectionStatus}
         isCalibrating={isCalibrating}
@@ -498,7 +483,6 @@ function LiveSession() {
         handleCalibrate={handleCalibrate}
       />
 
-      {/* PROGRESS BAR */}
       <div className="progress-bar-container">
         <div
           className="progress-bar-fill"
@@ -509,7 +493,6 @@ function LiveSession() {
         </div>
       </div>
 
-      {/* --- LIVE DATA (Refactored) --- */}
       <LiveDataDisplay
         liveAngles={liveAngles}
         pitchPct={pitchPct}
@@ -518,7 +501,6 @@ function LiveSession() {
         targetSets={selectedPrescription?.targetSets}
       />
 
-      {/* --- MOTOR CONTROLS (Refactored) --- */}
       <MotorControls
         anglePreset1={anglePreset1}
         setAnglePreset1={setAnglePreset1}
@@ -531,7 +513,6 @@ function LiveSession() {
         isConnected={connectionStatus === "Connected"}
       />
 
-      {/* --- 2. REPLACED THIS ENTIRE BLOCK --- */}
       <ExerciseControls
         prescriptions={prescriptions}
         selectedPrescription={selectedPrescription}
@@ -543,6 +524,7 @@ function LiveSession() {
           clearTimeout(automationTimerRef.current);
           setCurrentStepText("Ready to Start");
           setRepsInSet(0);
+          setExerciseProgress(0);
         }}
         isSessionActive={isSessionActive}
         isCalibrated={isCalibrated}
@@ -551,7 +533,6 @@ function LiveSession() {
         onEmergencyStop={handleEmergencyStop}
         isConnected={connectionStatus === "Connected"}
       />
-      {/* --- END OF REPLACEMENT --- */}
     </section>
   );
 }

@@ -1,5 +1,4 @@
 // src/components/PrescriptionForm.js
-// (UPDATED - Added Exercise Type selection)
 
 import React, { useState } from "react";
 import {
@@ -10,16 +9,23 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import {
+  FaTimes,
+  FaArrowUp,
+  FaArrowDown,
+  FaArrowLeft,
+  FaArrowRight,
+  FaDotCircle,
+} from "react-icons/fa";
 
-// Define automation sequences. These must match the keys in LiveSession.js
-const WRIST_WAVES_SEQ = ["TOP", "CENTER", "BOTTOM", "CENTER"];
-const SIDE_WAVES_SEQ = ["LEFT", "CENTER", "RIGHT", "CENTER"];
-
-// A map to make it easy to add more automated exercises later
-const AUTOMATION_MAP = {
-  "Automated: Wrist Waves (Up/Down)": WRIST_WAVES_SEQ,
-  "Automated: Wrist Waves (Side/Side)": SIDE_WAVES_SEQ,
-};
+// The building blocks available to the doctor
+const AVAILABLE_COMMANDS = [
+  { label: "TOP", icon: <FaArrowUp /> },
+  { label: "BOTTOM", icon: <FaArrowDown /> },
+  { label: "LEFT", icon: <FaArrowLeft /> },
+  { label: "RIGHT", icon: <FaArrowRight /> },
+  { label: "CENTER", icon: <FaDotCircle /> },
+];
 
 function PrescriptionForm({ patientId, existingPrescription, onClose }) {
   const [exerciseName, setExerciseName] = useState(
@@ -32,29 +38,41 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
     existingPrescription?.targetSets || 3
   );
   const [instructions, setInstructions] = useState(
-    (existingPrescription?.instructions || ["Step 1", "Step 2"]).join("\n")
+    (
+      existingPrescription?.instructions || ["Relax and let the device move."]
+    ).join("\n")
   );
 
-  // --- 1. ADDED NEW STATE ---
-  // Check if an automation sequence exists to set the default state
-  const getInitialExerciseType = () => {
-    if (existingPrescription?.automationSequence) {
-      // Find which key matches the existing sequence
-      const foundKey = Object.keys(AUTOMATION_MAP).find(
-        (key) =>
-          JSON.stringify(AUTOMATION_MAP[key]) ===
-          JSON.stringify(existingPrescription.automationSequence)
-      );
-      return foundKey || "manual"; // Default to manual if sequence is unknown
-    }
-    return "manual";
-  };
-  const [exerciseType, setExerciseType] = useState(getInitialExerciseType);
-  // --- END OF NEW STATE ---
+  // State: Manual vs Automated
+  // If existing prescription has a sequence > 0, it's automated
+  const [isAutomated, setIsAutomated] = useState(
+    existingPrescription?.automationSequence &&
+      existingPrescription.automationSequence.length > 0
+  );
+
+  // State: The Custom Sequence being built
+  const [customSequence, setCustomSequence] = useState(
+    existingPrescription?.automationSequence || []
+  );
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const isEditing = Boolean(existingPrescription);
+
+  // --- BUILDER FUNCTIONS ---
+  const addToSequence = (command) => {
+    setCustomSequence([...customSequence, command]);
+  };
+
+  const removeFromSequence = (indexToRemove) => {
+    setCustomSequence(
+      customSequence.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const clearSequence = () => {
+    setCustomSequence([]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,6 +81,15 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
 
     if (!patientId) {
       setError("No patient selected.");
+      setIsSaving(false);
+      return;
+    }
+
+    // Validation: If automated, must have at least 2 steps
+    if (isAutomated && customSequence.length < 2) {
+      setError(
+        "Automated exercises must have at least 2 steps in the sequence."
+      );
       setIsSaving(false);
       return;
     }
@@ -76,11 +103,8 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
         .filter((line) => line.trim() !== ""),
       dateAssigned: serverTimestamp(),
 
-      // --- 2. UPDATED DATA PAYLOAD ---
-      // Conditionally add the automation sequence
-      automationSequence:
-        exerciseType === "manual" ? [] : AUTOMATION_MAP[exerciseType],
-      // --- END OF UPDATE ---
+      // Save the custom sequence if automated, otherwise empty array
+      automationSequence: isAutomated ? customSequence : [],
     };
 
     try {
@@ -98,15 +122,14 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
           "prescriptions",
           existingPrescription.id
         );
-        // Note: We update the whole object, including new automation data
         await updateDoc(prescriptionDocRef, prescriptionData);
       } else {
         await addDoc(prescriptionsRef, prescriptionData);
       }
       onClose();
     } catch (err) {
-      console.error("Error saving prescription: ", err); // Keep error log
-      setError("Failed to save prescription. Please try again.");
+      console.error("Error saving prescription: ", err);
+      setError("Failed to save prescription.");
     } finally {
       setIsSaving(false);
     }
@@ -116,25 +139,85 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
     <div className="modal-overlay">
       <div className="modal-content prescription-form">
         <h2>{isEditing ? "Edit Prescription" : "Assign New Exercise"}</h2>
+
         <form onSubmit={handleSubmit}>
-          {/* --- 3. ADDED NEW FORM GROUP --- */}
+          {/* --- TYPE SELECTION --- */}
           <div className="form-group">
-            <label htmlFor="exerciseType">Exercise Type:</label>
-            <select
-              id="exerciseType"
-              value={exerciseType}
-              onChange={(e) => setExerciseType(e.target.value)}
-            >
-              <option value="manual">Manual (IMU-based)</option>
-              {/* Map over the automation options */}
-              {Object.keys(AUTOMATION_MAP).map((key) => (
-                <option key={key} value={key}>
-                  {key}
-                </option>
-              ))}
-            </select>
+            <label>Exercise Type:</label>
+            <div className="type-toggle">
+              <button
+                type="button"
+                className={!isAutomated ? "active" : ""}
+                onClick={() => {
+                  setIsAutomated(false);
+                  setCustomSequence([]);
+                }}
+              >
+                Manual (IMU)
+              </button>
+              <button
+                type="button"
+                className={isAutomated ? "active" : ""}
+                onClick={() => setIsAutomated(true)}
+              >
+                Automated (Motor)
+              </button>
+            </div>
           </div>
-          {/* --- END OF NEW FORM GROUP --- */}
+
+          {/* --- SEQUENCE BUILDER (Only if Automated) --- */}
+          {isAutomated && (
+            <div className="sequence-builder">
+              <label>Build Sequence (Click to add step):</label>
+
+              {/* 1. Control Palette */}
+              <div className="builder-controls">
+                {AVAILABLE_COMMANDS.map((cmd) => (
+                  <button
+                    key={cmd.label}
+                    type="button"
+                    className="builder-btn"
+                    onClick={() => addToSequence(cmd.label)}
+                  >
+                    {cmd.icon} {cmd.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 2. Visual Sequence Display */}
+              <div className="sequence-display">
+                {customSequence.length === 0 ? (
+                  <span className="empty-msg">
+                    No steps added yet. Click buttons above.
+                  </span>
+                ) : (
+                  customSequence.map((step, index) => (
+                    <div key={index} className="sequence-step">
+                      <span className="step-index">{index + 1}</span>
+                      <span className="step-name">{step}</span>
+                      <FaTimes
+                        className="remove-step-icon"
+                        onClick={() => removeFromSequence(index)}
+                      />
+                      {index < customSequence.length - 1 && (
+                        <div className="connector-line"></div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {customSequence.length > 0 && (
+                <button
+                  type="button"
+                  className="clear-seq-btn"
+                  onClick={clearSequence}
+                >
+                  Clear Sequence
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="form-group">
             <label htmlFor="exerciseName">Exercise Name:</label>
@@ -143,16 +226,11 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
               id="exerciseName"
               value={exerciseName}
               onChange={(e) => setExerciseName(e.target.value)}
-              placeholder={
-                exerciseType === "manual"
-                  ? "e.g., Manual Wrist Flex"
-                  : "e.g., Assisted Wrist Waves"
-              }
+              placeholder="e.g., Custom Motor Wave"
               required
             />
           </div>
 
-          {/* Use a grid to put Reps and Sets side-by-side */}
           <div
             style={{
               display: "grid",
@@ -162,7 +240,7 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
           >
             <div className="form-group">
               <label htmlFor="targetReps">
-                {exerciseType === "manual" ? "Target Reps" : "Total Reps"}
+                {isAutomated ? "Loops (Reps)" : "Target Reps"}
               </label>
               <input
                 type="number"
@@ -174,9 +252,7 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="targetSets">
-                {exerciseType === "manual" ? "Target Sets" : "Total Sets"}
-              </label>
+              <label htmlFor="targetSets">Total Sets</label>
               <input
                 type="number"
                 id="targetSets"
@@ -189,28 +265,28 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="instructions">Instructions (one per line):</label>
+            <label htmlFor="instructions">Instructions:</label>
             <textarea
               id="instructions"
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              rows="3" // Shortened a bit
-              placeholder="e.g., Flex your wrist upwards..."
+              rows="3"
               required
             />
           </div>
 
           {error && <p className="error-message">{error}</p>}
+
           <div className="modal-actions">
             <button
               type="button"
               onClick={onClose}
-              disabled={isSaving}
               className="cancel-btn"
+              disabled={isSaving}
             >
               Cancel
             </button>
-            <button type="submit" disabled={isSaving} className="save-btn">
+            <button type="submit" className="save-btn" disabled={isSaving}>
               {isSaving ? "Saving..." : "Save Prescription"}
             </button>
           </div>
@@ -219,4 +295,5 @@ function PrescriptionForm({ patientId, existingPrescription, onClose }) {
     </div>
   );
 }
+
 export default PrescriptionForm;

@@ -1,4 +1,4 @@
-// Updated ProgressTracker.js
+// src/components/ProgressTracker.js
 
 import React, { useState, useEffect } from "react";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
@@ -19,7 +19,6 @@ function ProgressTracker({ patientId }) {
   const [isLoading, setIsLoading] = useState(true);
   const [targetUserId, setTargetUserId] = useState(null);
 
-  // Effect 1: Determine targetUserId
   useEffect(() => {
     if (patientId) {
       setTargetUserId(patientId);
@@ -29,7 +28,6 @@ function ProgressTracker({ patientId }) {
     }
   }, [patientId]);
 
-  // Effect 2: Set up listener based on targetUserId
   useEffect(() => {
     if (!targetUserId) {
       setIsLoading(false);
@@ -55,29 +53,39 @@ function ProgressTracker({ patientId }) {
           console.error(`Error fetching sessions: `, error);
           setIsLoading(false);
         }
-      ); // Keep error log
+      );
     } catch (error) {
       console.error("Error setting up listener:", error);
       setIsLoading(false);
-    } // Keep error log
+    }
     return () => unsubscribe();
   }, [targetUserId]);
 
-  // Data formatting for chart
+  // --- FIX 1: Graph Data Formatting ---
+  // We now include the Time so points don't overlap on the same day
   const formatChartData = (history) => {
     if (!history) return [];
-    return history.map((session) => ({
-      date: session.timestamp?.seconds
-        ? new Date(session.timestamp.seconds * 1000).toLocaleDateString(
-            "en-US",
-            { month: "short", day: "numeric" }
-          )
-        : "N/A",
-      Flexion: session.maxFlex,
-      Extension: session.maxExt,
-      Radial: session.maxRad,
-      Ulnar: session.maxUln,
-    }));
+    return history.map((session) => {
+      const dateObj = session.timestamp?.seconds
+        ? new Date(session.timestamp.seconds * 1000)
+        : null;
+
+      return {
+        // Create a unique label: "Nov 21, 10:30 AM"
+        date: dateObj
+          ? dateObj.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "N/A",
+        Flexion: session.maxFlex,
+        Extension: session.maxExt,
+        Radial: session.maxRad,
+        Ulnar: session.maxUln,
+      };
+    });
   };
 
   return (
@@ -90,12 +98,9 @@ function ProgressTracker({ patientId }) {
         ) : sessionHistory.length === 0 ? (
           <p>No session data yet to display chart.</p>
         ) : (
-          /* Inside ProgressTracker.js */
-
           <ResponsiveContainer width="100%" height={350}>
             <LineChart
               data={formatChartData(sessionHistory)}
-              // FIX 1: Add 'left: 10' or '20' to give the SVG container some internal padding
               margin={{ top: 10, right: 30, left: 20, bottom: 10 }}
             >
               <CartesianGrid
@@ -106,23 +111,22 @@ function ProgressTracker({ patientId }) {
               <XAxis
                 dataKey="date"
                 stroke="var(--text-secondary)"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 11 }}
                 tickMargin={10}
+                // Only show every other label if it gets crowded, or remove interval to show all
+                interval="preserveStartEnd"
               />
               <YAxis
                 stroke="var(--text-secondary)"
-                // FIX 2: Increased width from 45 to 60 to fit "-180" AND the label
                 width={60}
                 tick={{ fontSize: 12 }}
                 domain={[-180, 180]}
                 label={{
                   value: "Degrees (°)",
                   angle: -90,
-                  position: "insideLeft", // Puts it inside the reserved width
+                  position: "insideLeft",
                   fill: "var(--text-secondary)",
                   style: { textAnchor: "middle" },
-                  // FIX 3: No negative offset needed if width is sufficient,
-                  // but we can add a small 'dy' to center it vertically if needed.
                 }}
               />
               <Tooltip
@@ -135,14 +139,12 @@ function ProgressTracker({ patientId }) {
                 itemStyle={{ fontSize: "0.9rem" }}
               />
               <Legend wrapperStyle={{ paddingTop: "20px" }} />
-
               <Line
                 type="monotone"
                 dataKey="Flexion"
                 stroke="#f97316"
                 strokeWidth={2}
                 dot={false}
-                // activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
@@ -161,7 +163,7 @@ function ProgressTracker({ patientId }) {
               <Line
                 type="monotone"
                 dataKey="Ulnar"
-                stroke="#f59e0b"
+                stroke="#fbc531"
                 strokeWidth={2}
                 dot={false}
               />
@@ -169,6 +171,7 @@ function ProgressTracker({ patientId }) {
           </ResponsiveContainer>
         )}
       </div>
+
       <div className="session-summary">
         <h3>Recent Sessions</h3>
         {isLoading ? (
@@ -176,28 +179,43 @@ function ProgressTracker({ patientId }) {
         ) : (
           <ul className="session-list">
             {sessionHistory.length > 0 ? (
-              [...sessionHistory].reverse().map((session) => (
-                // --- THIS IS THE UPDATED BLOCK ---
-                <li key={session.id}>
-                  <div className="session-info">
-                    <span className="session-date">
-                      {session.timestamp?.seconds
-                        ? new Date(
-                            session.timestamp.seconds * 1000
-                          ).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })
-                        : "N/A"}
-                    </span>
-                    <span className="session-exercise">
-                      {session.exerciseName}
-                    </span>
-                  </div>
-                  <span className="session-reps">{session.reps} Reps</span>
-                </li>
-                // --- END OF UPDATED BLOCK ---
-              ))
+              [...sessionHistory].reverse().map((session) => {
+                // --- FIX 2: Determine Style based on Emergency Stop ---
+                // Treat 'undefined' or 'false' as Safe. 'true' as Emergency.
+                const isEmergency = session.wasEmergencyStop === true;
+                const rowClass = isEmergency
+                  ? "session-emergency"
+                  : "session-safe";
+
+                return (
+                  <li key={session.id} className={rowClass}>
+                    <div className="session-info">
+                      <span className="session-date">
+                        {session.timestamp?.seconds
+                          ? new Date(
+                              session.timestamp.seconds * 1000
+                            ).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "N/A"}
+                      </span>
+                      <span className="session-exercise">
+                        {session.exerciseName}
+                      </span>
+                      {/* Show Emergency Badge if true */}
+                      {isEmergency && (
+                        <span className="emergency-badge">
+                          ⚠️ Emergency Stop Used
+                        </span>
+                      )}
+                    </div>
+                    <span className="session-reps">{session.reps} Reps</span>
+                  </li>
+                );
+              })
             ) : (
               <p>No session data found.</p>
             )}
