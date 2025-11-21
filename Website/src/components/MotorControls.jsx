@@ -20,8 +20,9 @@ function MotorControls({
       <h3>Motor Assistance</h3>
 
       <div className="motor-controls-grid">
+
         {/* --- COLUMN 1: MANUAL --- */}
-        <div className="manual-controls">
+        {/* <div className="manual-controls">
           <h4>Manual Angles</h4>
           <p>Set specific angles for each motor.</p>
           <div className="manual-inputs-grid">
@@ -60,7 +61,7 @@ function MotorControls({
           >
             Send Manual Commands
           </button>
-        </div>
+        </div> */}
 
         {/* --- COLUMN 2: PIE DIAL --- */}
         <div className="preset-controls">

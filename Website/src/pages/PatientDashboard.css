@@ -384,7 +384,7 @@ h2 {
   width: 100%;
 }
 
-/* --- CIRCULAR DIAL CONTROLS (Clean Website Theme) --- */
+/* --- CIRCULAR DIAL CONTROLS --- */
 .circular-dial-container {
   display: flex;
   justify-content: center;
@@ -410,17 +410,15 @@ h2 {
   box-shadow: 0 10px 25px rgba(0,0,0,0.05);
 }
 
-/* THE SEGMENTS (Subtle White/Grey) */
+/* THE SEGMENTS */
 .seg-btn {
   position: absolute;
   top: 0;
   right: 0;
   width: 50%;
   height: 50%;
-  /* Default: White */
   background-color: #ffffff; 
   border: none;
-  /* Lines: Use the standard border color */
   outline: 1px solid var(--border-color); 
   transform-origin: 0% 100%; /* Anchor at center */
   cursor: pointer;
@@ -430,33 +428,30 @@ h2 {
   z-index: 1;
 }
 
-/* Hover: Subtle Light Blue */
 .seg-btn:hover:not(:disabled) {
   background-color: #e0f2fe; 
 }
 
-/* Active: Slightly darker Blue */
 .seg-btn:active:not(:disabled) {
   background-color: #bae6fd;
 }
 
-/* Disabled: Just dim opacity */
 .seg-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* --- ROTATION LOGIC --- */
-.seg-top { transform: rotate(-67.5deg) skewY(-45deg); }
-.seg-tr { transform: rotate(-22.5deg) skewY(-45deg); }
-.seg-right { transform: rotate(22.5deg) skewY(-45deg); }
-.seg-br { transform: rotate(67.5deg) skewY(-45deg); }
-.seg-bottom { transform: rotate(112.5deg) skewY(-45deg); }
-.seg-bl { transform: rotate(157.5deg) skewY(-45deg); }
-.seg-left { transform: rotate(202.5deg) skewY(-45deg); }
-.seg-tl { transform: rotate(247.5deg) skewY(-45deg); }
+/* --- ROTATION LOGIC (Corrected: Shifted +45deg clockwise) --- */
+.seg-top    { transform: rotate(-22.5deg) skewY(-45deg); }
+.seg-tr     { transform: rotate(22.5deg) skewY(-45deg); }
+.seg-right  { transform: rotate(67.5deg) skewY(-45deg); }
+.seg-br     { transform: rotate(112.5deg) skewY(-45deg); }
+.seg-bottom { transform: rotate(157.5deg) skewY(-45deg); }
+.seg-bl     { transform: rotate(202.5deg) skewY(-45deg); }
+.seg-left   { transform: rotate(247.5deg) skewY(-45deg); }
+.seg-tl     { transform: rotate(292.5deg) skewY(-45deg); }
 
-/* --- CENTER BUTTON (Accent Orange) --- */
+/* --- CENTER BUTTON --- */
 .dial-center {
   position: absolute;
   top: 50%;
@@ -467,15 +462,14 @@ h2 {
   height: 90px;
   border-radius: 50%;
   
-  /* Matches your website's accent color */
   background-color: var(--brand-accent); 
-  border: 8px solid white; /* White ring gap */
+  border: 8px solid white;
   
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  z-index: 10; /* Top layer */
+  z-index: 10;
   box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
 }
 
@@ -584,21 +578,18 @@ h2 {
   transition: all 0.2s ease;
 }
 
-/* 1. Start Button (Green Gradient) */
 .start-btn {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
 }
 
-/* 2. Stop Button (Rose Gradient) */
 .stop-btn {
   background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
   color: white;
   border: none;
 }
 
-/* 3. Emergency Stop (Red Gradient) */
 .emergency-stop-btn {
   margin-top: 1rem;
   background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
@@ -608,7 +599,6 @@ h2 {
   letter-spacing: 0.5px;
 }
 
-/* 4. Manual Command Button (Solid Blue) */
 .send-all-angles-btn {
   margin-top: 1rem;
   background-color: white;
@@ -624,7 +614,7 @@ h2 {
 .start-btn:disabled,
 .stop-btn:disabled,
 .emergency-stop-btn:disabled {
-  opacity: 0.6; /* Fully visible just dimmed */
+  opacity: 0.6;
   cursor: not-allowed;
   filter: none; 
   box-shadow: none;
